@@ -1,44 +1,166 @@
 /* eslint-disable */
-<template>
+<template style="background-color: rgb(240,240,240)">
+  <div id="app" ref="app" style="background-color: rgb(240,240,240)">
+
+  <cv-header aria-label="Carbon header">
+    <cv-header-menu-button aria-label="Header menu" aria-controls="side-nav" />
+    <cv-skip-to-content href="#main-content">
+      Skip to content
+    </cv-skip-to-content>
+    <cv-header-name href="javascript:void(0)" prefix="IBM">
+      [Code Pattern]
+    </cv-header-name>
+    <cv-header-nav aria-label="Carbon nav">
+      <cv-header-menu-item @click="showModal({'name': 'login-modal', 'title': 'Login'})">
+        Login
+      </cv-header-menu-item>
+      <cv-header-menu-item @click="showModal({'name': 'configure-model-modal', 'title': 'Configure Model'}) ; getModels()">
+        Configure Model
+      </cv-header-menu-item>
+      <cv-header-menu aria-label="Set Video Source" title="Set Video Source">
+        <cv-header-menu-item @click="showModal({'name': 'configure-stream-modal', 'title': 'Stream RTSP'})">
+          Remote Stream
+        </cv-header-menu-item>
+        <cv-header-menu-item @click="showModal({'name': 'upload-modal'})">
+          Upload Video
+        </cv-header-menu-item>
+      </cv-header-menu>
+
+      <cv-header-menu-item @click="showModal({'name': 'add-rule'})">
+        Configure Alerts
+      </cv-header-menu-item>
+
+      <cv-header-menu-item @click="showModal({'name': 'add-action'})">
+        Configure Actions
+      </cv-header-menu-item>
+    </cv-header-nav>
 
 
-  <div id="app" ui-background="#262626">
-    <div>
-      <h1>
-        IBM Maximo Video Time Series Analyzer
-      </h1>
-    </div>
-
-    <div id="menu" style="margin-top:40px; margin-bottom:40px">
-      <div>
-        <CvButton style="margin: 0px 10px; text-align: center" type="default" v-on:click="showModal({'name': 'login-modal', 'title': 'Login'})">Login</CvButton>
-        <CvButton style="margin: 0px 10px; text-align: center" type="default" v-on:click="showModal({'name': 'configure-model-modal', 'title': 'Configure Model'}) ; getModels()">Configure Model</CvButton>
-
-        <!-- <CvButton style="margin: 0px 10px; text-align: center" type="default" v-on:click="showCVModal('configure-all-modal'); getModels()">Configuration</CvButton>
-        <CvButton style="margin: 0px 10px; text-align: center" type="default" v-on:click="showCVModal('test_cv_modal')">Test</CvButton> -->
-
-        <CvButton style="margin: 0px 10px; text-align: center" type="default" v-on:click="showModal({'name': 'configure-stream-modal', 'title': 'Stream RTSP'})">Configure Stream</CvButton>
-        <CvButton style="margin: 0px 10px; text-align: center" type="default" v-on:click="showModal({'name': 'upload-modal'})">Upload Video</CvButton>
-        <CvButton style="margin: 0px 10px; text-align: center" type="default" v-on:click="showModal({'name': 'add-rule'})">Configure Alert</CvButton>
-        <CvButton style="margin: 0px 10px; text-align: center" type="default" v-on:click="showModal({'name': 'add-action'})">Configure Action</CvButton>
-
-        <div style="width:40%;margin: auto;margin-top:30px;text-align: center">
-        <CvSearch
-          v-model="search_query"
-          >
-        </CvSearch>
+    <div class="bx--grid">
+      <div class="bx--row">
+        <div class="bx--offset-lg-15 bx--col-lg-1" >
         </div>
       </div>
     </div>
+    <!-- <slot name="header">
+      default header
+    </slot> -->
+    <!-- <template v-slot:header-global> -->
+    <template>
+      <div>
+
+        <template v-if="showSearch">
+          <CvSearch
+            style="top:0"
+            id="search_bar"
+            ref="search_bar"
+            v-model="search_query"
+            >
+          </CvSearch>
+        </template>
+      </div>
+      <div>
+        <cv-header-global-action
+          ref="search_icon"
+          @click="toggleShowSearch" >
+          <Search20 />
+        </cv-header-global-action>
+      </div>
+      <!-- <div style="position:relative;width:200px;height:20px;border:dotted">
+      </div> -->
+
+
+      <cv-header-global-action
+        aria-label="Notifications"
+        aria-controls="notifications-panel"
+        @click="actionNotifications" >
+        <template v-if="newNotification">
+          <NotificationNew20 className="notification"/>
+        </template>
+        <template v-else>
+          <Notification20 className="notification"/>
+        </template>
+      </cv-header-global-action>
+
+      <!-- <cv-header-global-action aria-label="User avatar" @click="actionUserAvatar" aria-controls="user-panel">
+        <UserAvatar20 v-if="loggedIn"/>
+        <Login20 v-else />
+      </cv-header-global-action> -->
+    </template>
+
+    <cv-header-panel  id="notifications-panel">
+      <h2>Alerts</h2>
+      <cv-switcher style="height:100%;overflow-y: auto">
+        <!-- <cv-switcher-item style="height:100px">
+          <cv-switcher-item-link style="height:100px">
+            <p>Test Alert</p>
+            <p>Today</p>
+            <WarningFilled32 fill="red" />
+          </cv-switcher-item-link>
+        </cv-switcher-item>
+        <cv-switcher-item style="height:100px">
+          <cv-switcher-item-link style="height:100px" >
+            <p>Test Alert</p>
+            <p>Today</p>
+            <WarningFilled32 fill="red" />
+          </cv-switcher-item-link>
+        </cv-switcher-item> -->
+
+
+        <template v-for="alert in alerts">
+          <cv-switcher-item style="height:100px">
+            <cv-switcher-item-link style="height:100px" @click="showModal({'name': 'show-inference', 'inference': inferences[alert['idx']]})">
+
+              <p>{{alert['type']}}</p>
+              <p>{{alert['date']}}</p>
+              <!-- {{alert['classes']}}  -->
+              <!-- {{alert['priority']}} -->
+              <template v-if="alert['priority'] == 'Low'">
+                <WarningFilled32 fill="yellow" />
+              </template>
+              <template v-else-if="alert['priority'] == 'Medium'">
+                <WarningFilled32 fill="orange" />
+              </template>
+              <template v-else-if="alert['priority'] == 'High'">
+                <WarningFilled32 fill="red" />
+              </template>
+            </cv-switcher-item-link>
+          </cv-switcher-item>
+        </template>
+      </cv-switcher>
+    </cv-header-panel>
+  </cv-header>
+
+
+  <div style="display:none; position:absolute;right:30px;z-index:9000;width:400px">
+    <!-- <template v-if="showSearch"> -->
+      <CvSearch
+        id="search_bar"
+        display="none"
+        ref="search_bar"
+        v-model="search_query"
+        >
+      </CvSearch>
+    <!-- </template> -->
+  </div>
+
+  <!-- <div id="menu" style="margin-top:40px; margin-bottom:40px">
+    <div>
+      <div style="width:40%;margin: auto;margin-top:30px;text-align: center">
+      <CvSearch
+        v-model="search_query"
+        >
+      </CvSearch>
+      </div>
+    </div>
+  </div> -->
 
 
   <div class="bleed">
 
     <div class="bx--grid">
-
-
     <div class="bx--row">
-      <div class="bx--col-md-4" >
+      <div class="bx--col-lg-6">
         <cv-tile>
 
 
@@ -104,45 +226,46 @@
               <canvas style="width:100%;z-index: 99" ref="canvas_bad" id="canvas_bad"></canvas>
             </div>
 
-<!-- xmax: 427
-xmin: 309
-ymax: 278
-ymin: 182 -->
-
-            <!-- Below "works" but box is too small. And resizing breaks it -->
-            <!-- <div style="border:dotted;border-color:green;width: 100%;position:absolute;top: 75px; right: 0; bottom: 0; left: 0;margin: auto;">
-              <canvas @mouseover="adjustRec" @click="draw" style="z-index: 100;border:dotted;border-color:red" ref="canvas_draw" id="canvas_draw"></canvas>
-            </div> -->
-
-
         </div>
 
-        <!-- <div style="margin-bottom:10px">
-          <cv-button style="width:50%;margin-bottom:10px" type="default" v-on:click="capture">Capture Frame And Analyze</cv-button>
-        </div> -->
-        <div style="margin-bottom:10px">
-          <cv-button id="interval" style="width:30%;margin-right: 10px;" v-on:click="intervalCapture()">Start Analysis Of Feed</cv-button>
-          <cv-button style="width:30%;margin: 0px 10px;" type="default" v-on:click="stopStream">Stop Analysis Of Feed</cv-button>
-          <cv-button id="configure_interval" style="width:30%;margin-left: 10px" v-on:click="showModal({'name': 'configure-interval-modal'})">Set Interval Of Feed</cv-button>
-        </div>
+          <div style="margin-top:30px">
 
-        <div style="margin-bottom:10px">
-          <cv-button style="width:50%" type="default" v-on:click="drawROI()">Draw ROI</cv-button>
-        </div>
+              <cv-inline-loading
+                style="width:180px"
+                :state="loadingState"
+                :loading-text="loadingText"
+              </cv-inline-loading>
+
+              <cv-button id="interval" style="width:30%;margin-right: 10px;"  v-on:click="intervalCapture()">Start Analysis Of Feed</cv-button>
+              <cv-button style="width:30%;margin: 0px 10px;background-color:#da1e28" type="default" v-on:click="stopStream">Stop Analysis Of Feed</cv-button>
+            <!-- <cv-icon-button :icon="iconAlways" tip-position="bottom" tip-alignment="center" /> -->
+
+            <div style="float:right">
+              <cv-interactive-tooltip id="settingsTooltip" ref="settingsTooltip" direction="bottom"  >
+                <template v-if="use_trigger" slot="trigger"><Settings32 @mouseover="enableTooltip" style="z-index: 100"  />
+                </template>
+                <template v-if="use_content" slot="content">
+                  <ul>
+                    <li>
+                      <cv-button id="configure_interval" v-on:click="showModal({'name': 'configure-interval-modal'})">Set Interval Of Feed</cv-button>
+                    </li>
+                    <li>
+                      <cv-button type="default" v-on:click="drawROI()">Draw ROI</cv-button>
+                    </li>
+                  </ul>
+                </template>
+              </cv-interactive-tooltip>
+            </div>
+          </div>
+          <!-- <div style="margin-bottom:10px">
+            <cv-button id="configure_interval" style="width:30%;margin-left: 10px" v-on:click="showModal({'name': 'configure-interval-modal'})">Set Interval Of Feed</cv-button>
+            <cv-button style="width:50%" type="default" v-on:click="drawROI()">Draw ROI</cv-button>
+          </div> -->
         </cv-tile>
       </div>
 
-      <div class="bx--col-md-4" >
-          <!-- <ccv-simple-bar-chart :data='timelineData' :options='timelineBarOptions'></ccv-simple-bar-chart> -->
-          <ccv-line-chart id="timelineChart" ref="timelineChart" :data='timelineData' :options='timelineOptions'></ccv-line-chart>
-      </div>
-
-      <!-- <template v-if="Object.keys(selectedModel).length > 0">
-        <h5>{{selectedModel['name']}}</h5>
-      </template> -->
-
-      <!-- <div class="bx--col-lg-4" >
-          <div style="border:1px solid rgb(128, 201, 123); height:650px">
+      <div class="bx--col-lg-3" >
+          <div style="border:1px solid; height:650px">
             <h5>Objects</h5>
             <p>
               found in {{Object.keys(inferencesByCategory['positive']).length}} images
@@ -169,19 +292,19 @@ ymin: 182 -->
           </div>
       </div>
 
-      <div class="bx--col-lg-2">
+      <div class="bx--col-lg-3">
             <h5 style="justify-content: center; align-items: center;">Results by Category</h5>
-            <div style="position:relative;z-index:0">
-              <Plotly @click=chartSearch :data="plotlyData" :layout="plotlyConfig" :display-mode-bar="false"></Plotly>
-            </div>
-      </div> -->
+            <!-- <div style="position:relative;z-index:0"> -->
+              <Plotly ref="pieChart" @click=chartSearch :data="plotlyData" :layout="plotlyConfig" :display-mode-bar="false"></Plotly>
+            <!-- </div> -->
+      </div>
 
 
     </div>
   </div>
 
-  <!-- <div class="bx--row" style="align-items: center; justify-content: center;margin-top:50px">
-    <template v-if="alerts.length > 0">
+  <div class="bx--row" style="align-items: center; justify-content: center;margin-top:50px">
+    <!-- <template v-if="alerts.length > 0">
       <div class="bx--col-md-4" style=height:600px;overflow-y:auto;>
         <cv-data-table title="Alerts" :zebra=true :columns="['Type', 'Date', 'Classes', 'Priority']" :pagination="{ numberOfItems: Infinity, pageSizes: [5, 10, 15, 20, 25] }">
           <template v-if="use_htmlData" slot="data">
@@ -194,7 +317,7 @@ ymin: 182 -->
           </template>
         </cv-data-table>
       </div>
-    </template>
+    </template> -->
 
     <div class="bx--col-md-8">
       <template v-if="inferences.length > 0">
@@ -235,7 +358,7 @@ ymin: 182 -->
           ></cv-data-table-skeleton>
       </template>
     </div>
-  </div> -->
+  </div>
 
 </div>
     <div>
@@ -402,7 +525,8 @@ ymin: 182 -->
           <h5 align="center"> {{parseDate(inference.created_date)}} </h5>
 
           <!-- <img :src="url + inference['thumbnail_path']"/> -->
-          <div style="width: 50%; margin: 0 auto;;">
+          <!-- <div style="width: 50%; margin: 0 auto;;"> -->
+          <div>
             <canvas id="image_canvas" v-overlay-image="inference"></canvas>
           </div>
           <template v-if="Object.keys(inference).includes('classified')">
@@ -575,6 +699,7 @@ ymin: 182 -->
             </cv-multi-select>
           </div>
 
+          <div>
           <cv-slider
             label="Confidence Threshold (%)"
             :min="0"
@@ -583,7 +708,10 @@ ymin: 182 -->
             :step="1"
             v-model="threshold"
             min-label="0"
-            max-label="100"></cv-slider>
+            max-label="100">
+          </cv-slider>
+          </div>
+
         </template>
 
         <h3>Configure Alert</h3>
@@ -636,6 +764,7 @@ ymin: 182 -->
             </cv-select>
           </div>
 
+
           <template v-if="selectedModel != {}">
             <div style="margin-top:10px">
               <cv-multi-select
@@ -671,7 +800,17 @@ ymin: 182 -->
               :step="1"
               v-model="threshold"
               min-label="0"
-              max-label="100"></cv-slider>
+              max-label="100">
+            </cv-slider>
+
+              <!-- <cv-number-input
+                style="margin-left:25%;margin-top:25px"
+                label="Analysis Interval (Seconds)"
+                v-model="interval"
+                :step=cv_number_step
+                :min=cv_number_min
+                >
+              </cv-number-input> -->
           </template>
           <div>
             <cv-button  style="margin-top:20px;margin-bottom:20px;float:right" >Select</cv-button>
@@ -679,8 +818,8 @@ ymin: 182 -->
         </cv-form>
 
     </modal>
-  </div>
 
+  </div>
 
 </template>
 
@@ -712,17 +851,23 @@ ymin: 182 -->
     },
 
     directives: {
-      overlayImage: function(canvasElement, inference, url, opacity=1.0) {
+      overlayImage: function(canvasElement, inference, vnode) {
           // Get canvas context
+          console.log("vnode.context")
+          console.log("vnode.context._data")
+          console.log(vnode.context._data)
+          console.log(vnode.context._data.selected_good_labels)
+          var opacity=1.0
           var ctx = canvasElement.getContext("2d");
           var can_w = 640 // ctx.canvas.width
           var can_h = 480 // ctx.canvas.height
-          var colors = ['red', 'blue', 'green', 'yellow', 'purple']
+          var colors = ['blue', 'green', 'yellow', 'purple', 'red']
           var heatmap = new Image
           heatmap.id = "heatmap"
           console.log('_id')
           var i = new Image
           i.id = "image"
+          var selectedLabels = vnode.context._data.selected_good_labels
           i.onload = function() {
               console.log("creating thumbnail canvas image")
               // define image and canvas overlay dimensions
@@ -758,9 +903,9 @@ ymin: 182 -->
                   var tl_y = (o['ymin'] * vRatio)
                   var w = (o['xmax'] - o['xmin']) * hRatio
                   var h = (o['ymax'] - o['ymin']) * vRatio
-                  ctx.lineWidth = "6";
-                  ctx.strokeStyle = colors[idx % colors.length];
-                  ctx.fillStyle = colors[idx % colors.length];
+                  ctx.lineWidth = "2";
+                  ctx.strokeStyle = colors[ selectedLabels.indexOf(o['label']) ] //[idx % colors.length];
+                  ctx.fillStyle = colors[ selectedLabels.indexOf(o['label'])]  //[idx % colors.length];
                   console.log(`xmin ${o['xmin']}, ymax ${o['ymax']}, hRatio ${hRatio} vRatio ${vRatio}`)
                   console.log(`w ${w}, h ${h}, tl_x ${tl_x}, tl_y ${tl_y} ` )
                   ctx.beginPath()
@@ -814,7 +959,22 @@ ymin: 182 -->
     },
     data() {
       return {
-        markType: "dot",
+        newNotification: false,
+        use_trigger: true,
+        use_content: true,
+        iconAlways: {
+         "name": "Settings32",
+         "functional": true,
+          "props": {
+            "title": {
+              "type": null
+            }
+          },
+          "_Ctor": {}
+        },
+        stacked:false,
+        loggedIn: false,
+        markType: "rect",
         timelineData: [
         {"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":7,"date":"10/5/2020 1:10:30 PM","group":"beltloader_empty"},{"value":1,"date":"10/5/2020 1:10:30 PM","group":"jetbridge_disconnected"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"jetbridge_connected"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"cargo_open"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"aircraft"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"wheel_chocked"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"beltloader_inuse"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"beltloader_baggage"}],
         timelineData: [],
@@ -1097,7 +1257,7 @@ ymin: 182 -->
         loopVideo: true,
         gray: "gray",
         videoPlaying: false,
-        interval: 1,
+        interval: 1.0,
         analyzingFrames: true,
         use_htmlData: true,
         countGenerated: false,
@@ -1125,10 +1285,12 @@ ymin: 182 -->
         },
         inferenceTileKind: "clickable",
         plotlyConfig: {
+          autosize: true,
+          paper_bgcolor: 'rgba(0,0,0,0)',
           // title: "Results by Category",
           hole: 0.4,
-          height: 500,
-          width: 500,
+          height: 600,
+          width: 450,
           x: -50,
           legend: {
             x: 0,
@@ -1219,6 +1381,7 @@ ymin: 182 -->
         // user_type: '',
         // user_input: [],
         captures: [],
+        showSearch: false,
         // player: {},
         video: {},
         canvas: {},
@@ -1337,6 +1500,7 @@ ymin: 182 -->
       console.log(`${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/scripts/tracking-min.js`)
     },
     mounted() {
+
       this.video = this.$refs.video;
       // this.$refs.video.addEventListener('ended', this.restartStream())
       // this.$refs.remote_video.addEventListener('ended', this.restartStream())
@@ -1365,7 +1529,7 @@ ymin: 182 -->
 
       var topMargin = canvas.offsetTop + "px"
       this.adjustDrawCanvas(canvas.offsetWidth, canvas.offsetHeight, topMargin)
-
+      this.toggleColor()
       const resize_ob = new ResizeObserver( (entries) => {
       	// since we are observing only a single element, so we access the first element in entries array
       	let rect = entries[0].contentRect;
@@ -1382,6 +1546,12 @@ ymin: 182 -->
 
       let debug = false
       if (debug) {
+        console.log("drawing debug")
+        this.$refs.canvas_draw.style.border = 'dotted'
+        this.$refs.canvas_draw.style.borderColor = 'blue'
+        this.$refs.canvas_draw.style.borderWidth = 'thin'
+
+        // this.$refs.videoHeader.style.border = 'dotted'
         this.$refs.canvas_bad_draw_div.style.border = 'dotted'
         this.$refs.canvas_bad_draw_div.style.borderColor = 'red'
 
@@ -1396,14 +1566,7 @@ ymin: 182 -->
         this.$refs.canvas_good.style.border = 'dashed'
         this.$refs.canvas_good.style.borderColor = 'green'
         this.$refs.canvas_good.style.borderWidth = 'thin'
-
-
-        this.$refs.canvas_draw.style.border = 'dotted'
-        this.$refs.canvas_draw.style.borderColor = 'blue'
-        this.$refs.canvas_draw.style.borderWidth = 'thin'
-
-        this.$refs.videoHeader.style.border = 'dotted'
-
+        console.log("done drawing debug")
       }
 
       // document.getElementById('canvas_draw').style.height
@@ -1413,6 +1576,47 @@ ymin: 182 -->
       // this.getInferenceDetails();
     },
     methods: {
+        enableTooltip(){
+          console.log("showing tooltip")
+          console.log(this.$refs.settingsTooltip)
+          this.$refs.settingsTooltip.visible = true
+          // this.$refs.settingsTooltip
+        },
+        disableTooltip(){
+
+        },
+        toggleShowSearch(){
+          this.$data.showSearch = !this.$data.showSearch
+          console.log(this.$refs.search_bar)
+          this.$refs.search_bar.style.display = null
+          this.$refs.search_bar.contentEditable=true
+          this.$refs.search_bar.focus()
+          // document.getElementById('search_bar').contentEditable=true;
+          // document.getElementById('search_bar').focus();
+        },
+        toggleColor() {
+          // change color of buttons, header,
+          this.$refs.pieChart.backgroundColor = "#f0f0f0"
+          document.body.style.backgroundColor = "#f0f0f0"
+          this.$refs.app.style.backgroundColor = "#f0f0f0"
+          // let tiles = document.getElementsByClassName('cv-tile') //document.querySelectorAll('cv-tile')
+          // tiles.map(tile => tile.style.)
+          // tiles[0].style.backgroundColor = "#f0f0f0"
+          // console.log(tiles)
+          // let chart = this.
+          // console.log("black")
+          // console.log(black)
+        },
+
+      actionAppSwitcher(){
+
+      },
+      actionNotifications(){
+        this.$data.newNotification = false
+      },
+      actionUserAvatar(){
+
+      },
 
       parseTimeline(){
         var labelsToIdx = {}
@@ -1544,35 +1748,94 @@ ymin: 182 -->
         console.log(alert)
         this.$data.alertConfigs.push(alert)
       },
-      checkAlert(classes, date) {
+      getCountFrame( classes ) {
+        return new Promise ( (resolve, reject) => {
+          console.log(classes)
+          var count = {}
+          classes.map( (cls, idx) => {
+            if (Object.keys(count).includes(cls)) {
+              count[cls] += 1
+            } else {
+              count[cls] = 1
+            }
+            console.log(idx)
+            if (idx === (classes.length - 1 ) ) {
+              resolve(count)
+            }
+          })
+        })
+      },
+      checkAlert(classes, date, inferencesIdx) {
         // TODO, what if we have multiple workers? Some may have cases some may not
-        console.log(`classes ${classes} found in inference`)
+        console.log(`classes ${JSON.stringify(classes)} found in inference`)
         // var classes = ['worker','vest','gloves']
-        // var classes = ['worker','vest','gloves', "helmet"]
+        // var classes = ['worker', 'worker', 'vest','gloves', "helmet"]
         // var existingLabels = ['worker']
         // var missingLabels = ['helmet','vest','gloves']
         // let union = [...new Set([...classes, ...missingLabels])]
-
         var contains = (x) => classes.includes(x)
         var that = this
-        this.$data.alertConfigs.map( (alertConfig) => {
-          let exists = alertConfig.existingLabels.some(contains)
-          let containsMissing = alertConfig.missingLabels.every(contains)
-          console.log(`exists ${exists}\ncontainsMissing ${containsMissing}`)
-          if (exists && (!containsMissing)) {
-            console.log("alert")
-            let alert = {
-              "type": alertConfig.title,
-              "classes": classes,
-              "priority": alertConfig.priority,
-              "date": date
+
+        // /*
+        // get count of objects in frame
+        // get count of "existing objects"
+        // compare count of existing objects to missing objects
+        // var clsCount
+        var alertConfigs = this.$data.alertConfigs
+        this.getCountFrame(classes).then((count) => {
+          alertConfigs.map((alertConfig) => {
+            console.log(`checking ${alertConfig.title}`)
+            let exists = alertConfig.existingLabels.some(contains)
+            let containsMissing = alertConfig.missingLabels.every(contains)
+            console.log(`exists ${exists}\ncontainsMissing ${containsMissing}`)
+
+            // number of "missingLabels" should be equal to existing labels
+            let existingLabelCount = count[alertConfig.existingLabels[0]]
+            let missingCount = alertConfig.missingLabels.every(label => count[label] >= existingLabelCount )
+            if (! missingCount) {
+              console.log("less 'missing labels' than 'existing labels'")
+              console.log(missingCount)
             }
-            that.$data.alerts.push(alert)
-          } else {
-            console.log("no alert")
-            console.log(`classes ${JSON.stringify(classes)}\n alertConfig.existingLabels ${JSON.stringify(alertConfig.existingLabels)}\n alertConfig.missingLabels ${JSON.stringify(alertConfig.missingLabels)}`)
-          }
+            if ( (exists && (!containsMissing) ) || (! missingCount) ) {
+              console.log("alert")
+              let alert = {
+                "type": alertConfig.title,
+                "classes": classes,
+                "priority": alertConfig.priority,
+                "date": date,
+                "idx": inferencesIdx
+              }
+              that.$data.alerts.push(alert)
+              that.$data.newNotification = true
+            } else {
+              console.log("no alert")
+              console.log(`classes ${JSON.stringify(classes)}\n alertConfig.existingLabels ${JSON.stringify(alertConfig.existingLabels)}\n alertConfig.missingLabels ${JSON.stringify(alertConfig.missingLabels)}`)
+            }
+          })
         })
+        // firstCount = clsCount.vals()
+        // clsCount.vals()
+        // */
+
+        // this.$data.alertConfigs.map( (alertConfig) => {
+        //   console.log(`checking ${alertConfig.title}`)
+        //   let exists = alertConfig.existingLabels.some(contains)
+        //   let containsMissing = alertConfig.missingLabels.every(contains)
+        //   console.log(`exists ${exists}\ncontainsMissing ${containsMissing}`)
+        //   if (exists && (!containsMissing)) {
+        //     console.log("alert")
+        //     let alert = {
+        //       "type": alertConfig.title,
+        //       "classes": classes,
+        //       "priority": alertConfig.priority,
+        //       "date": date
+        //     }
+        //     that.$data.alerts.push(alert)
+        //   } else {
+        //     console.log("no alert")
+        //     console.log(`classes ${JSON.stringify(classes)}\n alertConfig.existingLabels ${JSON.stringify(alertConfig.existingLabels)}\n alertConfig.missingLabels ${JSON.stringify(alertConfig.missingLabels)}`)
+        //   }
+        // })
 
         // let difference = new Set([...classes].filter(x => !missingLabels.has(x)))
 
@@ -1817,6 +2080,7 @@ ymin: 182 -->
         // that.$refs.canvas_draw.height = vidHeight
         // document.getElementById('canvas_draw_div').style.top
         // /*
+        console.log("resizing canvas")
         var vidWidth = this.$refs.remote_video.offsetWidth
         var vidHeight = this.$refs.remote_video.offsetHeight
         var topMargin = this.$refs.remote_video_div.offsetTop + "px"
@@ -1825,10 +2089,10 @@ ymin: 182 -->
         this.$refs.canvas.width = vidWidth
         this.$refs.canvas.height = vidHeight
 
-
         this.$refs.canvas_draw.width = vidWidth
         this.$refs.canvas_draw.height = vidHeight
         this.$refs.canvas_draw_div.style.top = topMargin
+        this.$refs.canvas_draw_div.height = vidHeight
         this.$refs.canvas_good.width = vidWidth
         this.$refs.canvas_bad.width = vidWidth
         this.$refs.canvas_good.height = vidHeight
@@ -1841,6 +2105,8 @@ ymin: 182 -->
         this.$refs.canvas_cursor.width = vidWidth
         this.$refs.canvas_cursor.height = vidHeight
         this.$refs.canvas_cursor_div.style.top = topMargin
+        this.$refs.canvas_cursor_div.height = vidHeight
+        console.log("done resizing")
         // */
       },
       uploadFile() {
@@ -1881,6 +2147,7 @@ ymin: 182 -->
             let localUrl = window.URL.createObjectURL(file.file)
             this.$data.localFileSrc = localUrl
             this.$refs.remote_video.src = localUrl
+            this.adjustDrawCanvas()
           }
         })
 
@@ -2652,58 +2919,48 @@ ymin: 182 -->
       drawRectStream(labelInRoi, width, cls, recWidth, recHeight,objectXMin, objectYMin, goodCtx, badCtx) {
          // return new Promise( (resolve, reject) => {
            console.log("draw rect promise")
-           // let badLabels = this.$data.selected_bad_labels
-           if ((this.$data.selected_bad_labels) && (this.$data.selected_bad_labels.includes( cls['label']))) {
-             // var canvas = this.$refs.canvas_bad
-             // var ctx = canvas.getContext("2d")
-             var ctx = badCtx
-             // ctx.beginPath();
-             console.log("bad")
-             var strokeStyle = "red";
-           } else if ((this.$data.selected_good_labels) && (this.$data.selected_good_labels.includes( cls['label']))) {
-             // var canvas = this.$refs.canvas_good
-             // var ctx = canvas.getContext("2d")
-             var ctx = goodCtx
-             // ctx.beginPath();
-             console.log("good")
-             var strokeStyle = "green";
-           } else {
-             console.log("neutral")
-             var strokeStyle = "yellow";
-             return
-           }
-           console.log(`label type ${strokeStyle}`)
-           if (labelInRoi) {
-             console.log("in roi")
-             var lineWidth = 2;
-             // ctx.shadowColor = '#99ff66';
-             // ctx.shadowBlur = 20;
-           } else {
-             console.log("NOT in roi")
-             var lineWidth = 1;
-           }
+          let colors = ['blue', 'green', 'yellow', 'purple', 'red']
+          let labels = this.$data.selected_good_labels
+          var strokeStyle = colors[ labels.indexOf(cls['label'])]
+          console.log("strokeStyle")
+          console.log(strokeStyle)
+          console.log("labels")
+          console.log(labels)
+          console.log("cls")
+          var canvas = this.$refs.canvas_good
+          var ctx = canvas.getContext("2d")
+          console.log(cls)
 
-           if (lineWidth && strokeStyle) {
+           if (strokeStyle) {
+
              ctx.beginPath();
-             ctx.lineWidth = lineWidth
+             ctx.lineWidth = 2
              ctx.strokeStyle = strokeStyle
+             ctx.fillStyle = strokeStyle
+             ctx.globalAlpha = 0.5
+
              console.log(`drawing rectangle around object ${ctx.strokeStyle} ${ctx.lineWidth} ${cls['label']}`)
              console.log(`location ${objectXMin}, ${objectYMin}, ${recWidth}, ${recHeight}`)
              if (this.$data.markType == "rect") {
                ctx.rect(objectXMin, objectYMin, recWidth, recHeight)
+               ctx.stroke();
+               ctx.globalAlpha = 0.05
+               ctx.fill();
              } else {
                // ctx.fillStyle = "green";
                // let color = this.$data.timelineOptions.color.scale[cls['label']]
-               let color = "green"
-               ctx.fillStyle = color
-               ctx.strokeStyle = color
+               // let color = "green"
+               // ctx.fillStyle = color
+               // ctx.strokeStyle = color
+               ctx.globalAlpha = 1.0
                ctx.arc(objectXMin, objectYMin, 3, 0, 2 * Math.PI);
                ctx.stroke();
                ctx.fill();
-               ctx.font = "15px IBM Plex Sans";
-               ctx.fillText(cls['label'], objectXMin, objectYMin)
-
              }
+             ctx.font = "20px IBM Plex Sans";
+             ctx.globalAlpha = 1.0
+             // ctx.fillStyle = "#206311"
+             ctx.fillText(cls['label'], objectXMin, objectYMin)
              // resolve()
            }
       },
@@ -2898,7 +3155,7 @@ ymin: 182 -->
                                      ( recBoxXMin <= objectXMin && objectXMin <= recBoxXMax ))
 
                     // if roi and label in roi, draw box
-                    if (labelInRoi) {
+                    if (labelInRoi || ( Object.keys(this.$data.recBoundingBoxes).length < 1  )) {
                       let recWidth = Math.abs(objectXMin - objectXMax)
                       let recHeight = Math.abs(objectYMin - objectYMax)
                       classesInRoi.push(cls['label'])
@@ -2912,8 +3169,7 @@ ymin: 182 -->
                     if (inference["classified"].length == (idx+1)) {
                       console.log("processed all objects in this inference, checking for alert")
                       // this.$data.alertConfigs.map()
-                      this.checkAlert(classesInRoi, date)
-                      this.parseTimeline()
+                      this.checkAlert(classesInRoi, date, this.$data.inferences.length)
                       var after = performance.now();
                       console.log(`processing inference took ${(after-before)/1000} seconds`)
                       // only append inference if we have matching classes in ROI, or no ROI defined
@@ -2933,7 +3189,7 @@ ymin: 182 -->
                          "priority": "High",
                          "date": date
                        }
-                       console.log(`adding alert ${alert['type']}`)
+                       // console.log(`adding alert ${alert['type']}`)
                        // this.$data.alerts.push(alert)
                      } /*else if (this.$data.selected_bad_labels.includes( cls['label']) && (!labelInRoi)) {
                        var alert = {
@@ -3349,7 +3605,9 @@ ymin: 182 -->
     text-align: center;
     color: #2c3e50;
     margin-top: 60px;
+    background-color: rgb(240,240,240);
   }
+
 
   #drop_zone {
     /* border: 2px dashed #eaecee; */
@@ -3374,6 +3632,10 @@ ymin: 182 -->
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
+  }
+
+  svg.notification {
+    fill: blue;
   }
 
 </style>
