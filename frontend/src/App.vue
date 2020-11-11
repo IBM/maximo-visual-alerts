@@ -104,22 +104,8 @@
               <canvas style="width:100%;z-index: 99" ref="canvas_bad" id="canvas_bad"></canvas>
             </div>
 
-<!-- xmax: 427
-xmin: 309
-ymax: 278
-ymin: 182 -->
-
-            <!-- Below "works" but box is too small. And resizing breaks it -->
-            <!-- <div style="border:dotted;border-color:green;width: 100%;position:absolute;top: 75px; right: 0; bottom: 0; left: 0;margin: auto;">
-              <canvas @mouseover="adjustRec" @click="draw" style="z-index: 100;border:dotted;border-color:red" ref="canvas_draw" id="canvas_draw"></canvas>
-            </div> -->
-
-
         </div>
 
-        <!-- <div style="margin-bottom:10px">
-          <cv-button style="width:50%;margin-bottom:10px" type="default" v-on:click="capture">Capture Frame And Analyze</cv-button>
-        </div> -->
         <div style="margin-bottom:10px">
           <cv-button id="interval" style="width:30%;margin-right: 10px;" v-on:click="intervalCapture()">Start Analysis Of Feed</cv-button>
           <cv-button style="width:30%;margin: 0px 10px;" type="default" v-on:click="stopStream">Stop Analysis Of Feed</cv-button>
@@ -132,16 +118,15 @@ ymin: 182 -->
         </cv-tile>
       </div>
 
-      <div class="bx--col-md-4" >
-          <!-- <ccv-simple-bar-chart :data='timelineData' :options='timelineBarOptions'></ccv-simple-bar-chart> -->
+      <!-- <div class="bx--col-md-4" >
           <ccv-line-chart id="timelineChart" ref="timelineChart" :data='timelineData' :options='timelineOptions'></ccv-line-chart>
-      </div>
+      </div> -->
 
       <!-- <template v-if="Object.keys(selectedModel).length > 0">
         <h5>{{selectedModel['name']}}</h5>
       </template> -->
 
-      <!-- <div class="bx--col-lg-4" >
+      <div class="bx--col-lg-4" >
           <div style="border:1px solid rgb(128, 201, 123); height:650px">
             <h5>Objects</h5>
             <p>
@@ -174,13 +159,13 @@ ymin: 182 -->
             <div style="position:relative;z-index:0">
               <Plotly @click=chartSearch :data="plotlyData" :layout="plotlyConfig" :display-mode-bar="false"></Plotly>
             </div>
-      </div> -->
+      </div>
 
 
     </div>
   </div>
 
-  <!-- <div class="bx--row" style="align-items: center; justify-content: center;margin-top:50px">
+  <div class="bx--row" style="align-items: center; justify-content: center;margin-top:50px">
     <template v-if="alerts.length > 0">
       <div class="bx--col-md-4" style=height:600px;overflow-y:auto;>
         <cv-data-table title="Alerts" :zebra=true :columns="['Type', 'Date', 'Classes', 'Priority']" :pagination="{ numberOfItems: Infinity, pageSizes: [5, 10, 15, 20, 25] }">
@@ -235,7 +220,7 @@ ymin: 182 -->
           ></cv-data-table-skeleton>
       </template>
     </div>
-  </div> -->
+  </div>
 
 </div>
     <div>
@@ -814,7 +799,7 @@ ymin: 182 -->
     },
     data() {
       return {
-        markType: "dot",
+        markType: "rect",
         timelineData: [
         {"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":7,"date":"10/5/2020 1:10:30 PM","group":"beltloader_empty"},{"value":1,"date":"10/5/2020 1:10:30 PM","group":"jetbridge_disconnected"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"jetbridge_connected"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"cargo_open"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"aircraft"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"wheel_chocked"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"beltloader_inuse"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"beltloader_baggage"}],
         timelineData: [],
@@ -1556,6 +1541,7 @@ ymin: 182 -->
         var contains = (x) => classes.includes(x)
         var that = this
         this.$data.alertConfigs.map( (alertConfig) => {
+          console.log(`checking ${alertConfig.title}`)
           let exists = alertConfig.existingLabels.some(contains)
           let containsMissing = alertConfig.missingLabels.every(contains)
           console.log(`exists ${exists}\ncontainsMissing ${containsMissing}`)
@@ -2687,10 +2673,15 @@ ymin: 182 -->
              ctx.beginPath();
              ctx.lineWidth = lineWidth
              ctx.strokeStyle = strokeStyle
+             ctx.fillStyle = strokeStyle
+             ctx.globalAlpha = 0.2
+
              console.log(`drawing rectangle around object ${ctx.strokeStyle} ${ctx.lineWidth} ${cls['label']}`)
              console.log(`location ${objectXMin}, ${objectYMin}, ${recWidth}, ${recHeight}`)
              if (this.$data.markType == "rect") {
                ctx.rect(objectXMin, objectYMin, recWidth, recHeight)
+               ctx.stroke();
+               ctx.fill();
              } else {
                // ctx.fillStyle = "green";
                // let color = this.$data.timelineOptions.color.scale[cls['label']]
@@ -2700,10 +2691,11 @@ ymin: 182 -->
                ctx.arc(objectXMin, objectYMin, 3, 0, 2 * Math.PI);
                ctx.stroke();
                ctx.fill();
-               ctx.font = "15px IBM Plex Sans";
-               ctx.fillText(cls['label'], objectXMin, objectYMin)
-
              }
+             ctx.font = "15px IBM Plex Sans";
+             ctx.globalAlpha = 1.0
+             ctx.fillStyle = "#206311"
+             ctx.fillText(cls['label'], objectXMin, objectYMin)
              // resolve()
            }
       },
