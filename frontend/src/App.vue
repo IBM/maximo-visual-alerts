@@ -1,0 +1,3654 @@
+/* eslint-disable */
+<template style="background-color: rgb(240,240,240)">
+  <div id="app" ref="app" style="background-color: rgb(240,240,240)">
+
+  <cv-header aria-label="Carbon header">
+    <cv-header-menu-button aria-label="Header menu" aria-controls="side-nav" />
+    <cv-skip-to-content href="#main-content">
+      Skip to content
+    </cv-skip-to-content>
+    <cv-header-name href="javascript:void(0)" prefix="IBM">
+      [Code Pattern]
+    </cv-header-name>
+    <cv-header-nav aria-label="Carbon nav">
+      <cv-header-menu-item @click="showModal({'name': 'login-modal', 'title': 'Login'})">
+        Login
+      </cv-header-menu-item>
+      <cv-header-menu-item @click="showModal({'name': 'configure-model-modal', 'title': 'Configure Model'}) ; getModels()">
+        Configure Model
+      </cv-header-menu-item>
+      <cv-header-menu aria-label="Set Video Source" title="Set Video Source">
+        <cv-header-menu-item @click="showModal({'name': 'configure-stream-modal', 'title': 'Stream RTSP'})">
+          Remote Stream
+        </cv-header-menu-item>
+        <cv-header-menu-item @click="showModal({'name': 'upload-modal'})">
+          Upload Video
+        </cv-header-menu-item>
+      </cv-header-menu>
+
+      <cv-header-menu-item @click="showModal({'name': 'add-rule'})">
+        Configure Alerts
+      </cv-header-menu-item>
+
+      <cv-header-menu-item @click="showModal({'name': 'add-action'})">
+        Configure Actions
+      </cv-header-menu-item>
+    </cv-header-nav>
+
+
+    <div class="bx--grid">
+      <div class="bx--row">
+        <div class="bx--offset-lg-15 bx--col-lg-1" >
+        </div>
+      </div>
+    </div>
+    <!-- <slot name="header">
+      default header
+    </slot> -->
+    <!-- <template v-slot:header-global> -->
+    <template>
+      <div>
+
+        <template v-if="showSearch">
+          <CvSearch
+            style="top:0"
+            id="search_bar"
+            ref="search_bar"
+            v-model="search_query"
+            >
+          </CvSearch>
+        </template>
+      </div>
+      <div>
+        <cv-header-global-action
+          ref="search_icon"
+          @click="toggleShowSearch" >
+          <Search20 />
+        </cv-header-global-action>
+      </div>
+      <!-- <div style="position:relative;width:200px;height:20px;border:dotted">
+      </div> -->
+
+
+      <cv-header-global-action
+        aria-label="Notifications"
+        aria-controls="notifications-panel"
+        @click="actionNotifications" >
+        <template v-if="newNotification">
+          <NotificationNew20 className="notification"/>
+        </template>
+        <template v-else>
+          <Notification20 className="notification"/>
+        </template>
+      </cv-header-global-action>
+
+      <!-- <cv-header-global-action aria-label="User avatar" @click="actionUserAvatar" aria-controls="user-panel">
+        <UserAvatar20 v-if="loggedIn"/>
+        <Login20 v-else />
+      </cv-header-global-action> -->
+    </template>
+
+    <cv-header-panel  id="notifications-panel">
+      <h2>Alerts</h2>
+      <cv-switcher style="height:100%;overflow-y: auto">
+        <!-- <cv-switcher-item style="height:100px">
+          <cv-switcher-item-link style="height:100px">
+            <p>Test Alert</p>
+            <p>Today</p>
+            <WarningFilled32 fill="red" />
+          </cv-switcher-item-link>
+        </cv-switcher-item>
+        <cv-switcher-item style="height:100px">
+          <cv-switcher-item-link style="height:100px" >
+            <p>Test Alert</p>
+            <p>Today</p>
+            <WarningFilled32 fill="red" />
+          </cv-switcher-item-link>
+        </cv-switcher-item> -->
+
+
+        <template v-for="alert in alerts">
+          <cv-switcher-item style="height:100px">
+            <cv-switcher-item-link style="height:100px" @click="showModal({'name': 'show-inference', 'inference': inferences[alert['idx']]})">
+
+              <p>{{alert['type']}}</p>
+              <p>{{alert['date']}}</p>
+              <!-- {{alert['classes']}}  -->
+              <!-- {{alert['priority']}} -->
+              <template v-if="alert['priority'] == 'Low'">
+                <WarningFilled32 fill="yellow" />
+              </template>
+              <template v-else-if="alert['priority'] == 'Medium'">
+                <WarningFilled32 fill="orange" />
+              </template>
+              <template v-else-if="alert['priority'] == 'High'">
+                <WarningFilled32 fill="red" />
+              </template>
+            </cv-switcher-item-link>
+          </cv-switcher-item>
+        </template>
+      </cv-switcher>
+    </cv-header-panel>
+  </cv-header>
+
+
+  <div style="display:none; position:absolute;right:30px;z-index:9000;width:400px">
+    <!-- <template v-if="showSearch"> -->
+      <CvSearch
+        id="search_bar"
+        display="none"
+        ref="search_bar"
+        v-model="search_query"
+        >
+      </CvSearch>
+    <!-- </template> -->
+  </div>
+
+  <!-- <div id="menu" style="margin-top:40px; margin-bottom:40px">
+    <div>
+      <div style="width:40%;margin: auto;margin-top:30px;text-align: center">
+      <CvSearch
+        v-model="search_query"
+        >
+      </CvSearch>
+      </div>
+    </div>
+  </div> -->
+
+
+  <div class="bleed">
+
+    <div class="bx--grid">
+    <div class="bx--row">
+      <div class="bx--col-lg-6">
+        <cv-tile>
+
+
+        <div ref="videoHeader" style="height:50px;margin-bottom:20px; top:0;left:0;right:0;margin:auto;width: 50%;position:relative">
+
+          <p> {{instructionsROI}} <p>
+
+          <div style="margin:auto;width: 50%;position:relative">
+            <cv-inline-loading
+              style="width:180px"
+              :state="loadingState"
+              :loading-text="loadingText"
+            </cv-inline-loading>
+          </div>
+        </div>
+
+        <div style="height:480px">
+            <!-- TODO, should only need a single video/canvas..caveats are
+            1. Cannot capture frames from remote video unless we proxy it through backend w/CORS headers
+            2. Need backend with ffmpeg
+            3. Webcam streams to canvas
+            -->
+
+            <!-- Uploaded video -->
+            <div style="width: 100%;height:100%;position:absolute;top: 10px; right: 0; bottom: 0; left: 0;margin: auto;">
+              <video muted loop @ended="restartStream()" style="z-index: 10;width: 100%;height:480px;" crossorigin="anonymous" ref="video" id="video" width="640" height="480" autoplay></video>
+            </div>
+
+            <!-- Remote video -->
+            <div ref="remote_video_div" id="remote_video_div" style="visibility: hidden;width: 100%;height:100%;position:absolute;top: 30%; right: 0; bottom: 0; left: 0;margin: auto;">
+              <video muted loop @ended="restartStream()"  style="z-index: 5;width: 100%;" crossorigin="anonymous" ref="remote_video" id="remote_video"  autoplay></video>
+            </div>
+
+            <!-- RTSP -->
+            <div style="width: 100%;height:100%;position:absolute;top: 10px; right: 0; bottom: 0; left: 0;margin: auto;">
+              <canvas style="width: 100%;height:480px;z-index: 9;visibility: hidden" crossorigin="anonymous" ref="stream_canvas" id="stream_canvas"  width="640" height="480" ></canvas>
+            </div>
+
+            <!-- Webcam -->
+            <div style="width: 100%;height:100%;position:absolute;top: 10px; right: 0; bottom: 0; left: 0;margin: auto;">
+              <canvas style="z-index: 0; visibility: hidden" crossorigin="anonymous" ref="canvas" id="canvas" ></canvas>
+            </div>
+
+            <!-- Overlay canvas to draw ROIs -->
+            <div style="z-index: 150;width: 100%;height:50%; position:absolute;right: 0; bottom: 0; left: 0;" ref="canvas_draw_div" id="canvas_draw_div">
+              <canvas @mousemove="hover"  @click="draw" style="width:100%;z-index: 150;" ref="canvas_draw" id="canvas_draw"></canvas>
+              <!-- @mouseover="hover"  -->
+            </div>
+
+            <!-- Overlay canvas to draw user cursor, show rectangle to be drawn -->
+            <div style="width: 100%;height:50%; position:absolute;right: 0; bottom: 0; left: 0;" ref="canvas_cursor_div" id="canvas_cursor_div">
+              <canvas style="width:100%;z-index: 99" ref="canvas_cursor" id="canvas_cursor"></canvas>
+            </div>
+
+
+            <!-- Canvas to show good labels -->
+            <div style="width: 100%;position:absolute;right: 0; bottom: 0; left: 0;" ref="canvas_good_draw_div" id="canvas_good_draw_div">
+              <canvas style="width:100%;z-index: 99;" ref="canvas_good" id="canvas_good"></canvas>
+            </div>
+
+            <!-- Canvas to show bad labels -->
+            <div style="width: 100%;position:absolute;right: 0; bottom: 0; left: 0;" ref="canvas_bad_draw_div" id="canvas_bad_draw_div">
+              <canvas style="width:100%;z-index: 99" ref="canvas_bad" id="canvas_bad"></canvas>
+            </div>
+
+        </div>
+
+          <div style="margin-top:30px">
+
+              <cv-inline-loading
+                style="width:180px"
+                :state="loadingState"
+                :loading-text="loadingText"
+              </cv-inline-loading>
+
+              <cv-button id="interval" style="width:30%;margin-right: 10px;"  v-on:click="intervalCapture()">Start Analysis Of Feed</cv-button>
+              <cv-button style="width:30%;margin: 0px 10px;background-color:#da1e28" type="default" v-on:click="stopStream">Stop Analysis Of Feed</cv-button>
+            <!-- <cv-icon-button :icon="iconAlways" tip-position="bottom" tip-alignment="center" /> -->
+
+            <div style="float:right">
+              <cv-interactive-tooltip id="settingsTooltip" ref="settingsTooltip" direction="bottom"  >
+                <template v-if="use_trigger" slot="trigger"><Settings32 @mouseover="enableTooltip" style="z-index: 100"  />
+                </template>
+                <template v-if="use_content" slot="content">
+                  <ul>
+                    <li>
+                      <cv-button id="configure_interval" v-on:click="showModal({'name': 'configure-interval-modal'})">Set Interval Of Feed</cv-button>
+                    </li>
+                    <li>
+                      <cv-button type="default" v-on:click="drawROI()">Draw ROI</cv-button>
+                    </li>
+                  </ul>
+                </template>
+              </cv-interactive-tooltip>
+            </div>
+          </div>
+          <!-- <div style="margin-bottom:10px">
+            <cv-button id="configure_interval" style="width:30%;margin-left: 10px" v-on:click="showModal({'name': 'configure-interval-modal'})">Set Interval Of Feed</cv-button>
+            <cv-button style="width:50%" type="default" v-on:click="drawROI()">Draw ROI</cv-button>
+          </div> -->
+        </cv-tile>
+      </div>
+
+      <div class="bx--col-lg-3" >
+          <div style="border:1px solid; height:650px">
+            <h5>Objects</h5>
+            <p>
+              found in {{Object.keys(inferencesByCategory['positive']).length}} images
+            </p>
+            <div style="height:70px;overflow-y:auto;">
+              <template v-for="label in selected_good_labels">
+                <cv-tag
+                :label="label"
+                kind="gray"
+                ></cv-tag>
+              </template>
+            </div>
+
+            <div style="display: grid; overflow-y:auto; grid-template-columns: auto auto;height:530px">
+              <template v-for="inference in filteredInferences">
+
+                <template v-if="checkClasses(inference, selected_good_labels, 'positive').length > 0">
+                  <cv-tile style="width:95%;height:120px" v-on:click.native="showModal({'name': 'show-inference', 'inference': inference})" :kind="inferenceTileKind">
+                    <img style="width:98%;height:98%" :src=inference.canvas_url><img/>
+                  </cv-tile>
+                </template>
+              </template>
+            </div>
+          </div>
+      </div>
+
+      <div class="bx--col-lg-3">
+            <h5 style="justify-content: center; align-items: center;">Results by Category</h5>
+            <!-- <div style="position:relative;z-index:0"> -->
+              <Plotly ref="pieChart" @click=chartSearch :data="plotlyData" :layout="plotlyConfig" :display-mode-bar="false"></Plotly>
+            <!-- </div> -->
+      </div>
+
+
+    </div>
+  </div>
+
+  <div class="bx--row" style="align-items: center; justify-content: center;margin-top:50px">
+    <!-- <template v-if="alerts.length > 0">
+      <div class="bx--col-md-4" style=height:600px;overflow-y:auto;>
+        <cv-data-table title="Alerts" :zebra=true :columns="['Type', 'Date', 'Classes', 'Priority']" :pagination="{ numberOfItems: Infinity, pageSizes: [5, 10, 15, 20, 25] }">
+          <template v-if="use_htmlData" slot="data">
+            <cv-data-table-row v-for="(row, rowIndex) in alerts" :key="`${rowIndex}`" :value="`${rowIndex}`" @click.native="showModal({'name': 'show-inference', 'inference': inferences[rowIndex]})">
+              <cv-data-table-cell><input type="text" :value="row['type']" style="border: none; background: none; width: 100%;"/></cv-data-table-cell>
+              <cv-data-table-cell><input type="text" :value="row['date']" style="border: none; background: none; width: 100%;"/></cv-data-table-cell>
+              <cv-data-table-cell><input type="text" :value="row['classes']" style="border: none; background: none; width: 100%;"/></cv-data-table-cell>
+              <cv-data-table-cell><input type="text" :value="row['priority']" style="border: none; background: none; width: 100%;"/></cv-data-table-cell>
+            </cv-data-table-row>
+          </template>
+        </cv-data-table>
+      </div>
+    </template> -->
+
+    <div class="bx--col-md-8">
+      <template v-if="inferences.length > 0">
+        <div style=height:600px;overflow-y:auto;>
+          <cv-data-table title="Inferences" sortable="" :zebra=true :columns="['Type', 'Date', 'Classes', 'Model']" :pagination="{ numberOfItems: Infinity, pageSizes: [5, 10, 15, 20, 25] }">
+            <template v-if="use_htmlData" slot="data">
+
+                <cv-data-table-row v-for="(row, rowIndex) in filteredInferences" :key="`${rowIndex}`" :value="`${rowIndex}`" @click.native="showModal({'name': 'show-inference', 'inference': inferences[rowIndex]})">
+                   <cv-data-table-cell><input type="text" :value="row['analysis_type']" style="border: none; background: none; width: 100%;"/></cv-data-table-cell>
+                   <cv-data-table-cell><input type="text" :value="parseDate(row['created_date'])" style="border: none; background: none; width: 100%;"/></cv-data-table-cell>
+                   <cv-data-table-cell style="overflow-x:auto">
+                     <template v-if="row['analysis_type'] == 'object_detection'">
+                       <template v-for="c in row['classified']">
+                         <cv-tag :label="c['label']" :type="gray"></cv-tag>
+                       </template>
+                     </template>
+                     <template v-else-if="row['analysis_type'] == 'classification'">
+                       <template v-for="c in row['classified']">
+                         <cv-tag :label="c['name']" :type="gray"></cv-tag>
+                       </template>
+                     </template>
+                     <template v-else>
+                       "type doesn't match"
+                     </template>
+                   </cv-data-table-cell>
+                   <cv-data-table-cell><input type="text" :value="selectedModelName" style="border: none; background: none; width: 100%;"/></cv-data-table-cell>
+                 </cv-data-table-row>
+
+             </template>
+          </cv-data-table>
+        </div>
+      </template>
+      <template v-else>
+        <cv-data-table-skeleton
+          :columns="['Type', 'Date', 'Classes', 'Model']"
+          :rows=3
+          title="Inferences"
+          ></cv-data-table-skeleton>
+      </template>
+    </div>
+  </div>
+
+</div>
+    <div>
+      <modal name="upload-modal" height="auto" style="z-index: 3000;">
+          <h2 align="center"> Upload File </h2>
+          <div style="margin-left: auto; margin-right: auto;width: 75%; padding: 10px;">
+            <cv-file-uploader
+              :accept="['.mp4', '.jpg', '.jpeg', '.png']"
+              :multiple=true
+              ref="fileUploader">
+            </cv-file-uploader>
+          </div>
+          <div>
+            <cv-button @click="uploadFile() ; hideModal({name: 'upload-modal'})">Submit</cv-button>
+          </div>
+      </modal>
+
+
+
+
+      <modal name="view-config" height="auto" style="z-index: 3000;">
+          <h1 align="center"> View Configuration </h1>
+            <h3>{{selectedModelName}}</h3>
+          <!-- <div style="margin-left: auto; margin-right: auto;width: 75%; padding: 10px;"> -->
+            <cv-tile v-for="alert in alertConfigs" >
+              <h1>{{alert.title}}</h1>
+              <p>{{alert.existingLabels}}</p>
+              <p>{{alert.missingLabels}}</p>
+              <p>{{alert.priority}}</p>
+            </cv-tile>
+
+          <!-- </div> -->
+          <div>
+            <cv-button @click="hideModal({name: 'view-config'})">Close</cv-button>
+          </div>
+      </modal>
+
+
+
+      <modal name="add-rule" height="auto" style="z-index: 3000;">
+
+        <h2 text-align="center">Configure Alerts</h2>
+        <cv-form style="margin-left:20px;margin-right:20px" @submit.prevent="addAlert">
+          <cv-text-input
+            label="Title"
+            v-model="alertTitle"
+            >
+          </cv-text-input>
+
+          <cv-multi-select
+            v-model="alertExistingLabels"
+            :label="alertExistingLabels.join(',')"
+            title="Existing Objects"
+            selection-feedback="top-after-reopen"
+            :inline=false
+            :filterable=true
+            :auto-filter=true
+            :auto-highlight=true
+            :options="good_labels">
+          </cv-multi-select>
+
+          <cv-multi-select
+            v-model="alertMissingLabels"
+            :label="alertMissingLabels.join(',')"
+            :inline=false
+            title="Missing Objects"
+            selection-feedback="top-after-reopen"
+            :filterable=true
+            :auto-filter=true
+            :auto-highlight=true
+            :options="good_labels">
+          </cv-multi-select>
+
+          <!-- TODO, add multiple ROIs -->
+          <!-- <cv-multi-select
+            v-model="selected_labels"
+            :label="selected_labels.join(',')"
+            :inline=false
+            title="Select ROI(s)"
+            selection-feedback="top-after-reopen"
+            :filterable=true
+            :auto-filter=true
+            :auto-highlight=true
+            :options="drawnRois">
+          </cv-multi-select> -->
+
+          <!-- TODO, add actions -->
+          <!-- <cv-select style="height:60px;margin-left:-50px; margin-top: -30px;" @change="setModel" v-model="selectedModelName" id="modelSelector" ref="modelSelector" theme=""
+            label="Bind Action" :inline=false >
+            <cv-select-option label="Select Action" value="" :disabled=true>Priority</cv-select-option>
+            <cv-select-option v-for="action in actions"></cv-select-option>
+          </cv-select> -->
+
+          <cv-select style="height:60px;margin-left:-50px; margin-top: -30px;"
+            v-model="alertPriority" ref="alertPrioritySelector" theme="" title="Bind Action" :hide-label=true :inline=false >
+            <cv-select-option label="Set Priority" value="" :disabled=true>Priority</cv-select-option>
+            <cv-select-option label="High" value="High">High</cv-select-option>
+            <cv-select-option label="Medium" value="Medium">Medium</cv-select-option>
+            <cv-select-option label="Low" value="Low">Low</cv-select-option>
+          </cv-select>
+
+          <cv-button style="margin-top:30px;margin-bottom:20px;margin-right:20px;float:right" v-on:click="hideModal({'name': 'add-rule'})">Confirm</cv-button>
+        </cv-form>
+      </modal>
+
+
+      <modal name="add-action" height="auto" style="z-index: 3000;">
+        <cv-form style="margin-left:20px;margin-right:20px" @submit.prevent="hideModal({name: 'add-action'})">
+          <h2>Configure Actions</h2>
+        <!-- <div> -->
+          <cv-text-input
+            v-model="actionTitle"
+            placeholder="Sample Action"
+            label="Title">
+          </cv-text-input>
+
+          <cv-text-input
+            v-model="actionUrl"
+            placeholder="https://api_url/endpoint"
+            label="REST Endpoint">
+          </cv-text-input>
+
+          <cv-text-input
+            placeholder="Username"
+            v-model="actionUserName"
+            label="Username">
+          </cv-text-input>
+
+          <cv-text-input
+            placeholder="Password"
+            v-model="actionPassword"
+            label="Password">
+          </cv-text-input>
+
+
+        <!-- </div> -->
+        <div>
+          <p>Rest Method</p>
+          <cv-select  style="height:60px;margin-left:-50px; margin-top: -30px;" v-model="restMethod" ref="restSelector" theme="" :inline=false >
+            <cv-select-option selected label="POST" value="POST">POST</cv-select-option>
+            <cv-select-option label="GET" value="GET">GET</cv-select-option>
+            <cv-select-option label="PUT" value="PUT">PUT</cv-select-option>
+          </cv-select>
+        </div>
+
+          <!-- <cv-number-input
+            style="margin-left:25%;margin-top:25px"
+            label="Analysis Interval (Seconds)"
+            v-model="interval"
+            :step=cv_number_step
+            :min=cv_number_min
+            >
+          </cv-number-input> -->
+        <!-- <div> -->
+          <cv-button style="margin-top:30px;margin-bottom:20px;margin-right:20px;float:right" v-on:click="hideModal({'name': 'configure-interval-modal'})">Confirm</cv-button>
+        <!-- </div> -->
+        </cv-form>
+      </modal>
+
+
+      <modal name="show-inference" height="auto" style="z-index: 4000;">
+        <!-- <cv-tile kind="clickable" style="float:center"> -->
+          <h2 align="center"> Inference </h2>
+          <h5 align="center"> {{parseDate(inference.created_date)}} </h5>
+
+          <!-- <img :src="url + inference['thumbnail_path']"/> -->
+          <!-- <div style="width: 50%; margin: 0 auto;;"> -->
+          <div>
+            <canvas id="image_canvas" v-overlay-image="inference"></canvas>
+          </div>
+          <template v-if="Object.keys(inference).includes('classified')">
+            <div style="margin:auto; width: 50%;margin-bottom:20px">
+              <template v-if="inference['analysis_type'] == 'object_detection'" >
+                <cv-data-table :data="[['Score', inference.classified[0].confidence], ['Class', inference.classified[0].label], ['Type', inference.analysis_type]]" ref="table"></cv-data-table>
+              </template>
+              <template v-else-if="inference['analysis_type'] == 'classification'" >
+                <cv-data-table :data="[['Score', inference.classified[0].confidence], ['Class', inference.classified[0].name], ['Type', inference.analysis_type]]" ref="table"></cv-data-table>
+              </template>
+            </div>
+          </template>
+          <cv-button @click="hideModal({name:'show-inference'})">Close</cv-button>
+        <!-- </cv-tile> -->
+      </modal>
+
+      <modal name="configure-interval-modal" height="auto" style="z-index: 3000;">
+        <h2 align="center"> Configure Analysis Interval </h2>
+
+        <!-- <cv-tile style="float:center"> -->
+        <cv-form style="margin-left:20px;margin-right:20px" @submit.prevent="hideModal({name: 'configure-interval-modal'})">
+          <cv-number-input
+            style="margin-left:25%;margin-top:25px"
+            label="Analysis Interval (Seconds)"
+            v-model="interval"
+            :step=cv_number_step
+            :min=cv_number_min
+            >
+          </cv-number-input>
+
+          <!-- <cv-checkbox
+            style="margin-left:25%;margin-top:25px"
+            label="loop"
+            :checked=true
+            v-model="loopVideo"
+            >
+          </cv-checkbox> -->
+          <cv-button style="margin-top:30px;margin-bottom:20px;margin-right:20px;float:right" v-on:click="hideModal({'name': 'configure-interval-modal'})">Confirm</cv-button>
+        </cv-form>
+            <!-- </cv-tile> -->
+      </modal>
+
+      <modal name="configure-stream-modal" height="auto" style="z-index: 3000;">
+        <h2 align="center"> Configure Stream </h2>
+          <cv-form style="margin-left:20px;margin-right:20px" @submit.prevent="stream">
+            <cv-text-input
+              label="URL"
+              placeholder="URL (Youtube or RTSP)"
+              v-model="rtsp_url">
+            </cv-text-input>
+            <cv-text-input
+              label="Port"
+              v-model="rtsp_port"
+              placeholder="Port">
+            </cv-text-input>
+            <cv-text-input
+              label="Username"
+              v-model="rtsp_username"
+              placeholder="Username">
+            </cv-text-input>
+
+            <cv-text-input
+              label="Password"
+              v-model="rtsp_password"
+              type="password"
+              placeholder="Password">
+            </cv-text-input>
+
+            <!-- <cv-select label="Example select label">
+              <cv-select-option disabled selected hidden>Choose an option</cv-select-option>
+              <cv-select-optgroup label="Category 1">
+                <cv-select-option value="cv-select-option1">cv-select-option 1</cv-select-option>
+                <cv-select-option value="cv-select-option2">cv-select-option 2</cv-select-option>
+              </cv-select-optgroup>
+              <cv-select-optgroup label="Category 2">
+                <cv-select-option value="cv-select-option3">cv-select-option 3</cv-select-option>
+                <cv-select-option value="cv-select-option4">cv-select-option 4</cv-select-option>
+              </cv-select-optgroup>
+            </cv-select> -->
+            <cv-button >Submit</cv-button>
+          </cv-form>
+      </modal>
+
+      <modal name="view-configured-models" height="auto" style="z-index: 3000;">
+        <h2>Configured Models</h2>
+        {{JSON.stringify(this.$data.modelConfigs)}}
+      </modal>
+
+
+      <modal name="login-modal" height="auto" style="z-index: 3000;">
+
+        <h2 align="center"> Login Maximo Visual Inspector </h2>
+          <cv-form style="margin-left:20px;margin-right:20px" @submit.prevent="login">
+            <cv-text-input
+              label="URL"
+              placeholder="URL"
+              v-model="mviUrl">
+            </cv-text-input>
+            <cv-text-input
+              label="Username"
+              v-model="username"
+              placeholder="Username">
+            </cv-text-input>
+            <cv-text-input
+              label="Password"
+              v-model="password"
+              type="password"
+              placeholder="Password">
+            </cv-text-input>
+            <cv-text-input
+              label="API Token"
+              v-model="apiToken"
+              type="password"
+              placeholder="API Token">
+            </cv-text-input>
+            <cv-button style="margin-bottom:10px;margin-top:10px;float:right">Submit</cv-button>
+          </cv-form>
+      </modal>
+    </div>
+
+    <!-- TODO draw rect -->
+    <!-- <vue-button type="default" v-on:click="showModal({'name': 'view-image'})">Image</vue-button> -->
+    <div style="margin: 0; position: absolute; top: 50%; left: 50%;z-index: 3000;" >
+      <modal name="view-image" height="auto" >
+        <h2 align="center"> Image </h2>
+        <div style="width: 50%; margin: 0 auto;">
+          <canvas id="image_canvas" v-overlay-image="inference"></canvas>
+        </div>
+        <div>
+          <vue-button type="default" v-on:click="hideModal({'name': 'view-image'})">Cancel</vue-button>
+        </div>
+      </modal>
+    </div>
+
+
+
+<cv-modal name="test_cv_modal" ref="test_cv_modal">
+    <div class="bx--form-item">
+      <label class="bx--label">Text Input label</label>
+      <input id="text-input-3h9mddk235a" type="text" class="bx--text-input" placeholder="Optional placeholder text" data-modal-primary-focus>
+    </div>
+</cv-modal>
+
+
+
+    <cv-modal name="configure-all-modal" ref="configure-all-modal" style="z-index: 3000;" >
+      <!-- <cv-form style="margin-left:20px;margin-right:20px" @submit.prevent="updateModelConfig"> -->
+        <h3>Configure Model</h3>
+        <div class="bx--form-item">
+          <cv-select style="height:60px;margin-left:-50px; margin-top: -30px;" @change="setModel" v-model="selectedModelName" id="modelSelector" ref="modelSelector" theme="" label="Select Model" :hide-label=true >
+            <cv-select-option label="Select a Model" value="" :disabled=true>Select a Model</cv-select-option>
+            <template v-for="model in models">
+              <cv-select-option :label="model.name" :value="model.name">{{model.name}}</cv-select-option>
+            </template>
+          </cv-select>
+        </div>
+
+        <template v-if="selectedModel != {}">
+          <div style="margin-top:10px">
+            <cv-multi-select
+              v-model="selected_good_labels"
+              :label="selected_good_labels.join(',')"
+              :inline=false
+              helper-text="Tracked Objects"
+              selection-feedback="top-after-reopen"
+              :filterable=true
+              :auto-filter=true
+              :auto-highlight=true
+              :options="good_labels">
+            </cv-multi-select>
+          </div>
+
+          <div>
+          <cv-slider
+            label="Confidence Threshold (%)"
+            :min="0"
+            :max="100"
+            :value="70"
+            :step="1"
+            v-model="threshold"
+            min-label="0"
+            max-label="100">
+          </cv-slider>
+          </div>
+
+        </template>
+
+        <h3>Configure Alert</h3>
+        <cv-multi-select
+          v-model="alertExistingLabels"
+          :label="alertExistingLabels.join(',')"
+          title="Existing Objects"
+          selection-feedback="top-after-reopen"
+          :inline=false
+          :filterable=true
+          :auto-filter=true
+          :auto-highlight=true
+          :options="good_labels">
+        </cv-multi-select>
+
+        <cv-select style="height:60px;margin-left:-50px; margin-top: -30px;"
+          v-model="alertPriority" ref="alertPrioritySelector" theme="" title="Bind Action" :hide-label=true :inline=false >
+          <cv-select-option label="Set Priority" value="" :disabled=true>Priority</cv-select-option>
+          <cv-select-option label="OK" value="OK">OK</cv-select-option>
+          <cv-select-option label="Not OK" value="Not OK">Not OK</cv-select-option>
+        </cv-select>
+
+        <!-- <cv-multi-select
+          v-model="alertMissingLabels"
+          :label="alertMissingLabels.join(',')"
+          :inline=false
+          title="Missing Objects"
+          selection-feedback="top-after-reopen"
+          :filterable=true
+          :auto-filter=true
+          :auto-highlight=true
+          :options="good_labels">
+        </cv-multi-select> -->
+
+        <cv-button  style="margin-top:20px;margin-bottom:20px;float:right" >Select</cv-button>
+      <!-- </cv-form> -->
+
+    </cv-modal>
+
+
+    <modal name="configure-model-modal" height="350px" style="z-index: 3000;" >
+      <h2 align="center" style="margin-top:20px"> Configure Model </h2>
+      <cv-form style="margin-left:20px;margin-right:20px" @submit.prevent="updateModelConfig">
+          <div style="height:80px;position: relative">
+            <cv-select style="height:60px;margin-left:-50px; margin-top: -30px;" @change="setModel" v-model="selectedModelName" id="modelSelector" ref="modelSelector" theme="" label="Select Model" :hide-label=true >
+              <cv-select-option label="Select a Model" value="" :disabled=true>Select a Model</cv-select-option>
+              <template v-for="model in models">
+                <cv-select-option :label="model.name" :value="model.name">{{model.name}}</cv-select-option>
+              </template>
+            </cv-select>
+          </div>
+
+
+          <template v-if="selectedModel != {}">
+            <div style="margin-top:10px">
+              <cv-multi-select
+                v-model="selected_good_labels"
+                :label="selected_good_labels.join(',')"
+                :inline=false
+                helper-text="Tracked Objects"
+                selection-feedback="top-after-reopen"
+                :filterable=true
+                :auto-filter=true
+                :auto-highlight=true
+                :options="good_labels">
+              </cv-multi-select>
+            </div>
+            <!-- <div style="margin-top:10px;margin-bottom:10px">
+              <cv-multi-select
+                v-model="selected_bad_labels"
+                :label="selected_bad_labels.join(',')"
+                :inline=false
+                helper-text="Bad labels"
+                selection-feedback="top-after-reopen"
+                :filterable=true
+                :auto-filter=true
+                :auto-highlight=true
+                :options="good_labels">
+              </cv-multi-select>
+            </div> -->
+            <cv-slider
+              label="Confidence Threshold (%)"
+              :min="0"
+              :max="100"
+              :value="70"
+              :step="1"
+              v-model="threshold"
+              min-label="0"
+              max-label="100">
+            </cv-slider>
+
+              <!-- <cv-number-input
+                style="margin-left:25%;margin-top:25px"
+                label="Analysis Interval (Seconds)"
+                v-model="interval"
+                :step=cv_number_step
+                :min=cv_number_min
+                >
+              </cv-number-input> -->
+          </template>
+          <div>
+            <cv-button  style="margin-top:20px;margin-bottom:20px;float:right" >Select</cv-button>
+          </div>
+        </cv-form>
+
+    </modal>
+
+  </div>
+
+</template>
+
+<script>
+  // import 'vfc/dist/vfc.css'
+  // import {
+  //   Input
+  // } from 'vfc'
+  // import {
+  //   Form
+  // } from 'vfc'
+  // import {
+  //   FormItem
+  // } from 'vfc'
+  // import {
+  //   Button
+  // } from 'vfc'
+
+  export default {
+    name: 'app',
+    created() {
+      // var Youtube = new this.$Youtube()
+      var player
+      var JSZip = new this.$JSZip()
+      console.log("jszip")
+      console.log(JSZip)
+
+      // var cv = new this.$OpenCV()
+    },
+
+    directives: {
+      overlayImage: function(canvasElement, inference, vnode) {
+          // Get canvas context
+          console.log("vnode.context")
+          console.log("vnode.context._data")
+          console.log(vnode.context._data)
+          console.log(vnode.context._data.selected_good_labels)
+          var opacity=1.0
+          var ctx = canvasElement.getContext("2d");
+          var can_w = 640 // ctx.canvas.width
+          var can_h = 480 // ctx.canvas.height
+          var colors = ['blue', 'green', 'yellow', 'purple', 'red']
+          var heatmap = new Image
+          heatmap.id = "heatmap"
+          console.log('_id')
+          var i = new Image
+          i.id = "image"
+          var selectedLabels = vnode.context._data.selected_good_labels
+          i.onload = function() {
+              console.log("creating thumbnail canvas image")
+              // define image and canvas overlay dimensions
+              var img_w = 640 //this.width
+              var img_h = 480 //this.height
+              var can_w = 640 //ctx.canvas.width //width //= 400
+              var can_h = 480 //ctx.canvas.height //height //= 500
+              ctx.canvas.width = 640
+              ctx.canvas.height = 480
+
+              var hRatio = img_w / inference.value.width;
+              var vRatio = img_h / inference.value.height  ;
+
+              // var hRatio = img_w / canvasElement.width;
+              // var vRatio = img_h / canvasElement.height  ;
+              console.log(`img_h ${img_h} img_w ${img_w} can_w ${can_w} can_h ${can_h}`)
+              // var vRatio = 1
+              // var hRatio = 1
+
+              console.log(`img_h ${img_h} img_w ${img_w} can_w ${ctx.canvas.width} can_h ${ctx.canvas.height}`)
+              console.log(`hRatio ${hRatio} vRatio ${vRatio}`)
+              var ratio = Math.min ( hRatio, vRatio )
+              console.log('ratio')
+              console.log(ratio)
+              ctx.globalAlpha = 0.9;
+              var centerShift_x = 0//( canvasElement.width - hRatio*img_w ) / 2;
+              var centerShift_y = 0//( canvasElement.height - vRatio*img_h ) / 2;
+              ctx.drawImage(i, 0, 0, img_w, img_h)//, centerShift_x,centerShift_y,img_w, img_h ) //, 100, 100 * imageObj.height / imageObj.width)
+              if (inference.value['analysis_type'] == 'object_detection') {
+                console.log("drawing boxes")
+                inference.value['classified'].map( (o, idx) => {
+                  var tl_x = o['xmin'] * hRatio
+                  var tl_y = (o['ymin'] * vRatio)
+                  var w = (o['xmax'] - o['xmin']) * hRatio
+                  var h = (o['ymax'] - o['ymin']) * vRatio
+                  ctx.lineWidth = "2";
+                  ctx.strokeStyle = colors[ selectedLabels.indexOf(o['label']) ] //[idx % colors.length];
+                  ctx.fillStyle = colors[ selectedLabels.indexOf(o['label'])]  //[idx % colors.length];
+                  console.log(`xmin ${o['xmin']}, ymax ${o['ymax']}, hRatio ${hRatio} vRatio ${vRatio}`)
+                  console.log(`w ${w}, h ${h}, tl_x ${tl_x}, tl_y ${tl_y} ` )
+                  ctx.beginPath()
+                  ctx.font = "30px IBM Plex Sans";
+                  ctx.fillText(o['label'], (o['xmin'] * hRatio) + 20, (o['ymin'] * vRatio) + 20)
+                  ctx.rect( tl_x, tl_y, w, h )
+                  ctx.stroke()
+                })
+              } else {
+                heatmap.onload = function() {
+                    console.log("drawing heatmap")
+                    var img_w = this.width
+                    var img_h = this.height
+                    var hRatio = canvasElement.width / img_w    ;
+                    var vRatio = canvasElement.height / img_h  ;
+                    var ratio  = Math.max ( hRatio, vRatio )
+                    ctx.globalAlpha = 0.4;
+                    ctx.drawImage(heatmap, 0, 0, img_w, img_h, 0,0,img_w*ratio, img_h*ratio ) //, 100, 100 * imageObj.height / imageObj.width)
+                    console.log("dims")
+                    console.log(this.width)
+                    console.log(this.height)
+                    // TODO, add text based on class
+                    // canvasElement.width = this.width
+                    // canvasElement.height = this.height
+                }
+                heatmap.style.opacity = 0.1
+                heatmap.style['z-index'] = 100
+                console.log("inference['value']")
+                console.log(inference['value'])
+                heatmap.src = inference['value']['heatmap']
+              }
+          }
+          console.log("loading thumbnail")
+          // i.src = inference['value']['url'] + inference['value']['thumbnail_path']
+          i.src = inference.value.canvas_url
+          console.log(`canvasElement.width ${canvasElement.width}` )
+          console.log(`canvasElement.height ${canvasElement.height}` )
+      }
+
+    },
+    computed: {
+      filteredInferences: function() {
+        if (this.$data.search_query) {
+          console.log("filtering")
+          var query = this.$data.search_query
+          return this.$data.inferences.filter( inference => JSON.stringify(inference).includes(query) )
+        } else {
+          return this.$data.inferences
+        }
+      }
+    },
+    data() {
+      return {
+        newNotification: false,
+        use_trigger: true,
+        use_content: true,
+        iconAlways: {
+         "name": "Settings32",
+         "functional": true,
+          "props": {
+            "title": {
+              "type": null
+            }
+          },
+          "_Ctor": {}
+        },
+        stacked:false,
+        loggedIn: false,
+        markType: "rect",
+        timelineData: [
+        {"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":7,"date":"10/5/2020 1:10:30 PM","group":"beltloader_empty"},{"value":1,"date":"10/5/2020 1:10:30 PM","group":"jetbridge_disconnected"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"jetbridge_connected"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"cargo_open"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"aircraft"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"wheel_chocked"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"beltloader_inuse"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"beltloader_baggage"}],
+        timelineData: [],
+        timelineData1: [
+        		{
+        				"group": "Dataset 1",
+        				"date": "2019-01-01T08:00:00.000Z",
+        				"value": 1,
+        		},
+        		{
+        				"group": "Dataset 1",
+        				"date": "2019-01-05T08:00:00.000Z",
+        				"value": 1,
+        		},
+        		{
+        				"group": "Dataset 1",
+        				"date": "2019-01-08T08:00:00.000Z",
+        				"value": null,
+        		},
+        		{
+        				"group": "Dataset 1",
+        				"date": "2019-01-13T08:00:00.000Z",
+        				"value": 1,
+        		},
+        		{
+        				"group": "Dataset 1",
+        				"date": "2019-01-17T08:00:00.000Z",
+        				"value": 1,
+        		},
+        		{
+        				"group": "Dataset 2",
+        				"date": "2019-01-02T08:00:00.000Z",
+        				"value": 2
+        		},
+        		{
+        				"group": "Dataset 2",
+        				"date": "2019-01-06T08:00:00.000Z",
+        				"value": 2
+        		},
+        		{
+        				"group": "Dataset 2",
+        				"date": "2019-01-08T08:00:00.000Z",
+        				"value": 2
+        		},
+        		{
+        				"group": "Dataset 2",
+        				"date": "2019-01-15T08:00:00.000Z",
+        				"value": 2
+        		},
+        		{
+        				"group": "Dataset 2",
+        				"date": "2019-01-19T08:00:00.000Z",
+        				"value": 2
+        		},
+        		{
+        				"group": "Dataset 3",
+        				"date": "2019-01-01T08:00:00.000Z",
+        				"value": 3
+        		},
+        		{
+        				"group": "Dataset 3",
+        				"date": "2019-01-05T08:00:00.000Z",
+        				"value": null
+        		},
+        		{
+        				"group": "Dataset 3",
+        				"date": "2019-01-08T08:00:00.000Z",
+        				"value": 3
+        		},
+        		{
+        				"group": "Dataset 3",
+        				"date": "2019-01-13T08:00:00.000Z",
+        				"value": 3
+        		},
+        		{
+        				"group": "Dataset 3",
+        				"date": "2019-01-17T08:00:00.000Z",
+        				"value": 3
+        		},
+        		{
+        				"group": "Dataset 4",
+        				"date": "2019-01-02T08:00:00.000Z",
+        				"value": 4
+        		},
+        		{
+        				"group": "Dataset 4",
+        				"date": "2019-01-06T08:00:00.000Z",
+        				"value": 4
+        		},
+        		{
+        				"group": "Dataset 4",
+        				"date": "2019-01-08T08:00:00.000Z",
+        				"value": 4
+        		},
+        		{
+        				"group": "Dataset 4",
+        				"date": "2019-01-15T08:00:00.000Z",
+        				"value": 4
+        		},
+        		{
+        				"group": "Dataset 4",
+        				"date": "2019-01-19T08:00:00.000Z",
+        				"value": null
+        		}
+        ],
+  			timelineOptions: {
+        		"title": "Step (time series)",
+            // "color": {},
+        		"axes": {
+        				"bottom": {
+        						"title": "Time",
+        						"mapsTo": "date",
+        						"scaleType": "time"
+        				},
+        				"left": {
+                    "title": "Object",
+        						"mapsTo": "value", //"value",
+        						// "title": "Conversion rate",
+        						"scaleType": "linear",
+                    // "scaleType": "labels",
+                    // "domain": ["employee", "jetbridge_disconnected", "jetbridge_connected", "cargo_open", "wheel_chocked", "aircraft"],
+                    "ticks": {
+                      formatter: (a, b) => {
+                        console.log(`a ${a} b ${b}`)
+                        let labels = this.$data.selected_good_labels
+                        let labelIdx = b
+                        return labels[labelIdx]
+                      }
+                    }
+
+                    // "scaleType": "ordinal"
+        				// },
+              }
+        		},
+
+            "experimental": true,
+            "zoomBar": {
+              "top": {
+                "enabled": false,
+                "type": "slider_view",
+              }
+            },
+        		"height": "600px",
+            // "getFillColors": () => {
+            // },
+            "tooltip": {
+             "customHTML": (data, defaultHTML) =>  {
+               // console.log(defaultHTML)
+               // let i = new Image( )
+               // i.src = "https://image.shutterstock.com/image-photo/bright-spring-view-cameo-island-260nw-1048185397.jpg"
+               let imageUrl = data[0].imageUrl
+               // i.src = data.imageUrl
+               // let inference = this.$data.inferences(data[0]['inferenceIdx'])
+               // console.log("tooltip inference")
+               // console.log(inference)
+               return `<div><img src=${imageUrl}></img></div>`
+               // <ul class='multi-tooltip'><li> <div class="datapoint-tooltip "> <p class="label">Time</p> <p class="value">Oct 5, 2020</p> </div> </li><li> <div class="datapoint-tooltip "> <p class="label">y-value</p> <p class="value">7</p> </div> </li><li> <div class="datapoint-tooltip "> <a class="tooltip-color tooltip-14-1-2"></a> <p class="label">Group</p> <p class="value">beltloader_empty</p> </div> </li></ul>
+               // "return html string"
+             }
+            }
+          },
+          timelineBarOptions: {
+            "title": "Simple horizontal bar (centered legend)",
+            "axes": {
+              "left": {
+                "mapsTo": "group",
+                "scaleType": "labels"
+              },
+              "bottom": {
+                "mapsTo": "value"
+              }
+            },
+            "legend": {
+              "alignment": "center"
+            },
+            "height": "400px"
+          },
+          timelineBarOptions1: {
+          		"title": "Step (time series)",
+          		"axes": {
+          				"bottom": {
+          						"title": "Time",
+          						"mapsTo": "timestamp",
+          						"scaleType": "linear",
+                      "ticks": {
+                        formatter: (a, b) => {
+                          console.log(`a ${a} b ${b}`)
+                          // let labels = this.$data.selected_good_labels
+                          // let labelIdx = b
+                          console.log(a)
+                          return a
+                          // return labels[labelIdx]
+                        }
+                      }
+          				},
+          				"left": {
+                      "title": "Object",
+          						"mapsTo": "value", //"value",
+          						// "title": "Conversion rate",
+          						"scaleType": "linear",
+                      // "scaleType": "labels",
+                      // "domain": ["employee", "jetbridge_disconnected", "jetbridge_connected", "cargo_open", "wheel_chocked", "aircraft"],
+                      "ticks": {
+                        formatter: (a, b) => {
+                          console.log(`a ${a} b ${b}`)
+                          let labels = this.$data.selected_good_labels
+                          let labelIdx = b
+                          return labels[labelIdx]
+                        }
+                      }
+
+                      // "scaleType": "ordinal"
+          				// },
+                }
+          		},
+          		// "curve": "curveStepAfter",
+          		"height": "400px",
+              "tooltip": {
+               "customHTML": (data, defaultHTML) =>  {
+                 // console.log(defaultHTML)
+                 // let i = new Image( )
+                 // i.src = "https://image.shutterstock.com/image-photo/bright-spring-view-cameo-island-260nw-1048185397.jpg"
+                 let imageUrl = data[0].imageUrl
+                 // i.src = data.imageUrl
+                 // let inference = this.$data.inferences(data[0]['inferenceIdx'])
+                 // console.log("tooltip inference")
+                 // console.log(inference)
+                 return `<div><img src=${imageUrl}></img></div>`
+                 // <ul class='multi-tooltip'><li> <div class="datapoint-tooltip "> <p class="label">Time</p> <p class="value">Oct 5, 2020</p> </div> </li><li> <div class="datapoint-tooltip "> <p class="label">y-value</p> <p class="value">7</p> </div> </li><li> <div class="datapoint-tooltip "> <a class="tooltip-color tooltip-14-1-2"></a> <p class="label">Group</p> <p class="value">beltloader_empty</p> </div> </li></ul>
+                 // "return html string"
+               }
+              }
+            },
+
+        apiToken: "",
+        restMethod: "",
+        actionPassword: "",
+        actionUserName: "",
+        actionUrl: "",
+        actionTitle: "",
+        previewRect: false,
+        previewCursor: false,
+        alertPriority: "",
+        actionTitle: "",
+        alertConfigs: [],
+        // TODO, set Backend Proxy URL and PAIV URL seperate
+        mviUrl: (localStorage['paiv_url'] || process.env.VUE_MVI_URL),
+        proxyServerIp: process.env.VUE_APP_PROXY_IP || `${window.location.protocol}//${window.location.hostname}`,
+        proxyServerPort: process.env.VUE_APP_PROXY_PORT || 3000,
+        alerts: [],
+        instructionsROI: "",
+        stillImages: [],
+        alertTitle: "",
+        alertExistingLabels: [],
+        alertMissingLabels: [],
+        edge: false, //process.env.VUE_APP_EDGE || false,
+        drawing: false,
+        recStart: {},
+        drawnRois: [],
+        recEnd: {},
+        recBoundingBoxes: {},
+        roiWidth: 0,
+        cv_number_step: 1,
+        cv_number_min: 1,
+        cv_slider_max: 100,
+        cv_slider_min: 0,
+        cv_slider_value: 70,
+        cv_slider_step: 1,
+        selected_labels: [],
+        roiHeight: 0,
+        loadingText: "",
+        loadingState: "none",
+        form: {
+          function: '',
+          args: ''
+        },
+        legend: {},
+        chartRedraw: 0,
+        localFileSrc: "",
+        loopVideo: true,
+        gray: "gray",
+        videoPlaying: false,
+        interval: 1.0,
+        analyzingFrames: true,
+        use_htmlData: true,
+        countGenerated: false,
+        args: [],
+        products: [],
+        counts: {},
+        inferences: [],
+        renderInferences: [],
+        // filteredInferences: [],
+        allInferences: [],
+        inference_data: {},
+        fields: [],
+        selectedModelName: '',
+        inference_rows: [],
+        inference_rows_original: [],
+        inference_rows_filtered: [],
+        query: '',
+        tableData: [],
+        selectedModel: {},
+        threshold: "20",
+
+        inferencesByCategory: {
+          positive: {},
+          negative: {}
+        },
+        inferenceTileKind: "clickable",
+        plotlyConfig: {
+          autosize: true,
+          paper_bgcolor: 'rgba(0,0,0,0)',
+          // title: "Results by Category",
+          hole: 0.4,
+          height: 600,
+          width: 450,
+          x: -50,
+          legend: {
+            x: 0,
+            y: -400
+          },
+
+          automargin: true
+        },
+        plotlyData: [{
+          values: [1],
+          labels: ["None"],
+          // textposition: "inside",
+          // textinfo: "label",
+          // xanchor:'left',
+          // yanchor:'center',
+          type: 'pie',
+          marker: {
+            colors: []
+          }
+        }],
+        chartData: [
+        		{ "group": "placeholder", "value": 100}
+        ],
+        chartOptions: {
+      		// "title": "Results by Category",
+      		"resizable": false,
+          "legend": {
+            "position": "top",
+            "alignment": "left",
+            "truncation": {
+              "threshold": 200,
+              "numCharacter": 200
+            },
+          },
+          // "data": {
+            // "loading": true
+          // },
+          "color": {
+            "scale": {"placeholder": "rgb(220,220,220)"}
+          },
+          // "style:" {
+          //
+          // },
+          "pie": {
+              "tooltip": {
+                // "showTotal": true,
+                "truncation": {
+                  "threshold": 200,
+                  "numCharacter": 200
+                },
+              },
+              "truncation": {
+                "threshold": 200,
+                "numCharacter": 200
+              },
+              "alignment": "center"
+      		},
+      		"donut": {
+              "tooltip": {
+                // "showTotal": true,
+                "truncation": {
+                  "threshold": 200,
+                  "numCharacter": 200
+                },
+              },
+              "truncation": {
+                "threshold": 200,
+                "numCharacter": 200
+              },
+      				"center": {
+      						"label": "Objects/Classes Detected"
+      				},
+              "alignment": "center"
+      		},
+          "width": "300px",
+          "height": "500px",
+          // "color": {
+          //     "scale": {
+          //         "Conductor Damaged": "blue",
+          //         "Dataset 2": "red"
+          //     } // Other data groups would use default colors
+          // },
+
+        },
+
+        // token: (localStorage['token'] || ''),
+        // user_fields: [],
+        // user_type: '',
+        // user_input: [],
+        captures: [],
+        showSearch: false,
+        // player: {},
+        video: {},
+        canvas: {},
+        input: [],
+        func: '',
+        title: '',
+        src: '',
+        selectedInference: '',
+        models: [],
+        files: [],
+        selected_good_labels: [],
+        selected_bad_labels: [],
+        filenames: [],
+        inference: {},
+        inferenceDetails: {},
+        lineGraphData: [],
+        circleGraphData: [],
+        activeFilters: {},
+        sortAscending: true, //
+        username: (localStorage['paiv_user'] || process.env.VUE_APP_USER),
+        password: (localStorage['paiv_password'] || process.env.VUE_APP_PASSWORD),
+        css: {
+          table: {
+            tableWrapper: '',
+            tableHeaderClass: 'fixed',
+            tableBodyClass: 'fixed',
+            tableClass: 'ui blue selectable unstackable celled table',
+            loadingClass: 'loading',
+            ascendingIcon: 'blue chevron up icon',
+            descendingIcon: 'blue chevron down icon',
+            ascendingClass: 'sorted-asc',
+            descendingClass: 'sorted-desc',
+            sortableIcon: 'grey sort icon',
+            handleIcon: 'grey sidebar icon'
+          }
+        },
+        selected_compare: "",
+        selected_header: "",
+        value: "",
+        filter_header: "",
+        filter_value: "",
+        filter_compare_type: "",
+        search_query: "",
+        inference_results: {},
+        csv_type: "",
+        good_labels: [],
+        bad_labels: [],
+        categories: [],
+        cv_tag_label: "label",
+        cv_tag_kind: "gray",
+        modelConfigs: {},
+        mobile_inference_headers: [
+          "Thumbnail",
+          "DataSetName",
+          'Class',
+          'Score',
+          'Type',
+          'FormattedDate',
+          'Location'
+        ],
+        mapping: {
+          "Class": "Metadata0",
+          "Score": "Metadata1",
+          "Heatmap/Boxes": "Metadata4",
+          "ImageURL": "Thumbnail"
+        },
+        // inference_headers: [],
+        inference_headers: [
+          "ImageURL",
+          "InferenceType",
+          "Heatmap/Boxes",
+          'Class',
+          'Score',
+          'Time'
+        ],
+        lineGraphLayout: {
+          title: 'Objects Time Series',
+          xaxis: {
+            title: 'Seconds',
+            showgrid: false,
+            zeroline: false,
+            tickmode: 'linear'
+          },
+          yaxis: {
+            title: 'Objects',
+            showline: false,
+            dtick: 1
+          }
+        },
+        rtsp_url: '',
+        rtsp_port: '',
+        rtsp_username: '',
+        rtsp_password: '',
+        isStreaming: false,
+        streamingType: "" // rtsp or youtube
+      }
+    },
+    components: {
+      // Form,
+      // FormItem,
+      // [Input.name]: Input,
+      // [Button.name]: Button
+    },
+    beforeMount() {
+      // this.getInferences()
+      this.$data.token = localStorage.getItem('token')
+      this.$data.mviUrl = localStorage.getItem('mviUrl')
+      let recaptchaScript = document.createElement('script')
+      recaptchaScript.setAttribute('src', `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/scripts/jsmpeg.min.js`)
+      document.head.appendChild(recaptchaScript)
+
+      let trackerScript = document.createElement('script')
+      trackerScript.setAttribute('src', `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/scripts/tracking-min.js`)
+      document.head.appendChild(trackerScript)
+      console.log(`loading tracking script from`)
+      console.log(`${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/scripts/tracking-min.js`)
+    },
+    mounted() {
+
+      this.video = this.$refs.video;
+      // this.$refs.video.addEventListener('ended', this.restartStream())
+      // this.$refs.remote_video.addEventListener('ended', this.restartStream())
+      if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+              console.log(`stream ${stream}`)
+              console.log(`this.video ${this.video}`)
+              this.video.srcObject=stream;
+              this.video.play();
+          });
+      }
+      if (this.$data.token || (this.$data.edge && this.$data.mviUrl) ) {
+        console.log("previous token loaded")
+        // TODO, add regex to check token. also add last time token was refreshed
+        this.getModels()
+      }
+
+      if (localStorage.getItem('modelConfigs')) {
+        console.log("loading model configs")
+        // this.$data.modelConfigs = JSON.parse(localStorage.getItem('modelConfigs'))
+      }
+
+      var canvas = this.$refs.canvas_draw
+      canvas.width = canvas.offsetWidth
+      canvas.height = canvas.offsetHeight
+
+      var topMargin = canvas.offsetTop + "px"
+      this.adjustDrawCanvas(canvas.offsetWidth, canvas.offsetHeight, topMargin)
+      this.toggleColor()
+      const resize_ob = new ResizeObserver( (entries) => {
+      	// since we are observing only a single element, so we access the first element in entries array
+      	let rect = entries[0].contentRect;
+
+      	// current width & height
+      	let width = rect.width;
+      	let height = rect.height;
+        console.log("remote video size adjusted")
+      	console.log('Current Width : ' + width);
+      	console.log('Current Height : ' + height);
+        this.adjustDrawCanvas()
+      });
+      resize_ob.observe(this.$refs.remote_video)
+
+      let debug = false
+      if (debug) {
+        console.log("drawing debug")
+        this.$refs.canvas_draw.style.border = 'dotted'
+        this.$refs.canvas_draw.style.borderColor = 'blue'
+        this.$refs.canvas_draw.style.borderWidth = 'thin'
+
+        // this.$refs.videoHeader.style.border = 'dotted'
+        this.$refs.canvas_bad_draw_div.style.border = 'dotted'
+        this.$refs.canvas_bad_draw_div.style.borderColor = 'red'
+
+        this.$refs.canvas_bad.style.border = 'dotted'
+        this.$refs.canvas_bad.style.borderColor = 'red'
+        this.$refs.canvas_bad.style.borderWidth = 'thin'
+
+        this.$refs.canvas_good_draw_div.style.border = 'dotted'
+        this.$refs.canvas_good_draw_div.style.borderColor = 'green'
+        this.$refs.canvas_good_draw_div.style.borderWidth = 'thick'
+
+        this.$refs.canvas_good.style.border = 'dashed'
+        this.$refs.canvas_good.style.borderColor = 'green'
+        this.$refs.canvas_good.style.borderWidth = 'thin'
+        console.log("done drawing debug")
+      }
+
+      // document.getElementById('canvas_draw').style.height
+      // this.$refs.canvas_draw.style.height = this.$refs.canvas.style.height
+      // this.$refs.canvas_draw.style.width = this.$refs.canvas.style.width
+
+      // this.getInferenceDetails();
+    },
+    methods: {
+        enableTooltip(){
+          console.log("showing tooltip")
+          console.log(this.$refs.settingsTooltip)
+          this.$refs.settingsTooltip.visible = true
+          // this.$refs.settingsTooltip
+        },
+        disableTooltip(){
+
+        },
+        toggleShowSearch(){
+          this.$data.showSearch = !this.$data.showSearch
+          console.log(this.$refs.search_bar)
+          this.$refs.search_bar.style.display = null
+          this.$refs.search_bar.contentEditable=true
+          this.$refs.search_bar.focus()
+          // document.getElementById('search_bar').contentEditable=true;
+          // document.getElementById('search_bar').focus();
+        },
+        toggleColor() {
+          // change color of buttons, header,
+          this.$refs.pieChart.backgroundColor = "#f0f0f0"
+          document.body.style.backgroundColor = "#f0f0f0"
+          this.$refs.app.style.backgroundColor = "#f0f0f0"
+          // let tiles = document.getElementsByClassName('cv-tile') //document.querySelectorAll('cv-tile')
+          // tiles.map(tile => tile.style.)
+          // tiles[0].style.backgroundColor = "#f0f0f0"
+          // console.log(tiles)
+          // let chart = this.
+          // console.log("black")
+          // console.log(black)
+        },
+
+      actionAppSwitcher(){
+
+      },
+      actionNotifications(){
+        this.$data.newNotification = false
+      },
+      actionUserAvatar(){
+
+      },
+
+      parseTimeline(){
+        var labelsToIdx = {}
+        // {
+        //     "group": "Dataset 1",
+        //     "date": "2019-01-01T08:00:00.000Z",
+        //     "value": 1,
+        // },
+        var parseDate = this.parseDate
+        var numInferences = this.$data.inferences.length
+        var nodes = []
+        var that = this
+        var labels = this.$data.selected_good_labels
+        // this.$data.timelineOptions.axes.left.domain = labels
+        // create an object with selected labels, key is a label, value is false
+        var observedLabels = Object.fromEntries(labels.map( label => [label, false] ))
+        console.log(`observedLabels`)
+        console.log(observedLabels)
+        let timelineData = this.$data.inferences.map((inference, iIdx) => {
+          var date = inference.created_date
+          console.log(`date ${date}`)
+          var observedLabelsLocal = Object.assign({}, observedLabels)
+          // add object for each label in inference
+          console.log("graphing class indexes")
+          console.log(labels)
+          inference.classified.map( (cls, clsIdx)  => {
+            let idx = labels.findIndex(l => l === cls.label)
+            if (idx < 0 ) {
+              console.log("skipping, class not selected")
+            } else {
+              console.log(`cls.label ${cls.label} idx ${idx}`)
+              observedLabelsLocal[cls.label] = true
+              let line = {
+                value: idx,
+                date: date,
+                timestamp: inference['timestamp'],
+                group: cls.label,
+                imageUrl: inference['canvas_url'],
+                key: cls.label
+              }
+              console.log(line)
+              nodes.push(line)
+            }
+            let processedClassesDone = (clsIdx == (inference.classified.length - 1))
+            if (processedClassesDone) {
+              Object.keys(observedLabelsLocal).map( (label) => {
+                  let found = observedLabelsLocal[label]
+                  if (! found) {
+                    console.log(`selected label ${label} not in inference`)
+                    let line = {
+                      value: null,
+                      date: date,
+                      timestamp: inference['timestamp'],
+                      group: label,
+                      key: label
+                    }
+                    // nodes.push(line)
+                  }
+              } )
+            }
+            if (processedClassesDone && (iIdx == (numInferences - 1))) {
+              console.log("nodes")
+              console.log(nodes)
+              console.log(that.$data.timelineOptions)
+              that.$data.timelineData = nodes
+              // that.$data.timelineData.concat(nodes)
+              // return nodes
+            }
+            // return line
+          })
+          // }
+        })
+        console.log(timelineData)
+      },
+      onFilter(val) {
+        this.filterValue = val;
+      },
+      showCVModal(name) {
+        this.$refs[name].method('show')()
+      },
+      chartSearch(ev) {
+        let label = ev.points[0].label
+        this.$data.search_query = label
+        console.log(`clicked chart, filtering to ${label}`)
+      },
+      onSort(sortBy) {
+        if (sortBy) {
+          this.internalData.sort((a, b) => {
+            const itemA = a[sortBy.index];
+            const itemB = b[sortBy.index];
+
+            if (sortBy.order === 'descending') {
+              if (sortBy.index === 2) {
+                // sort as number
+                return parseFloat(itemA) - parseFloat(itemB);
+              } else {
+                return itemB.localeCompare(itemA);
+              }
+            }
+            if (sortBy.order === 'ascending') {
+              if (sortBy.index === 2) {
+                // sort as number
+                return parseFloat(itemB) - parseFloat(itemA);
+              } else {
+                return itemA.localeCompare(itemB);
+              }
+            }
+            return 0;
+          });
+        }
+      },
+      printTracker() {
+        // var tracking = new this.$Tracking()
+        // console.log("tracking")
+        // console.log(tracking)
+        var track = new tracking.ColorTracker(['magenta', 'cyan', 'yellow']) //.Tracker('webcam') //this.$tracking.Tracker('webcam')
+        console.log("tracking")
+        console.log(track)
+
+      },
+      addAlert() {
+        let alert = {
+          title: this.$data.alertTitle,
+          existingLabels: this.$data.alertExistingLabels,
+          missingLabels: this.$data.alertMissingLabels,
+          priority: this.$data.alertPriority
+        }
+        console.log("adding alert")
+        console.log(alert)
+        this.$data.alertConfigs.push(alert)
+      },
+      getCountFrame( classes ) {
+        return new Promise ( (resolve, reject) => {
+          console.log(classes)
+          var count = {}
+          classes.map( (cls, idx) => {
+            if (Object.keys(count).includes(cls)) {
+              count[cls] += 1
+            } else {
+              count[cls] = 1
+            }
+            console.log(idx)
+            if (idx === (classes.length - 1 ) ) {
+              resolve(count)
+            }
+          })
+        })
+      },
+      checkAlert(classes, date, inferencesIdx) {
+        // TODO, what if we have multiple workers? Some may have cases some may not
+        console.log(`classes ${JSON.stringify(classes)} found in inference`)
+        // var classes = ['worker','vest','gloves']
+        // var classes = ['worker', 'worker', 'vest','gloves', "helmet"]
+        // var existingLabels = ['worker']
+        // var missingLabels = ['helmet','vest','gloves']
+        // let union = [...new Set([...classes, ...missingLabels])]
+        var contains = (x) => classes.includes(x)
+        var that = this
+
+        // /*
+        // get count of objects in frame
+        // get count of "existing objects"
+        // compare count of existing objects to missing objects
+        // var clsCount
+        var alertConfigs = this.$data.alertConfigs
+        this.getCountFrame(classes).then((count) => {
+          alertConfigs.map((alertConfig) => {
+            console.log(`checking ${alertConfig.title}`)
+            let exists = alertConfig.existingLabels.some(contains)
+            let containsMissing = alertConfig.missingLabels.every(contains)
+            console.log(`exists ${exists}\ncontainsMissing ${containsMissing}`)
+
+            // number of "missingLabels" should be equal to existing labels
+            let existingLabelCount = count[alertConfig.existingLabels[0]]
+            let missingCount = alertConfig.missingLabels.every(label => count[label] >= existingLabelCount )
+            if (! missingCount) {
+              console.log("less 'missing labels' than 'existing labels'")
+              console.log(missingCount)
+            }
+            if ( (exists && (!containsMissing) ) || (! missingCount) ) {
+              console.log("alert")
+              let alert = {
+                "type": alertConfig.title,
+                "classes": classes,
+                "priority": alertConfig.priority,
+                "date": date,
+                "idx": inferencesIdx
+              }
+              that.$data.alerts.push(alert)
+              that.$data.newNotification = true
+            } else {
+              console.log("no alert")
+              console.log(`classes ${JSON.stringify(classes)}\n alertConfig.existingLabels ${JSON.stringify(alertConfig.existingLabels)}\n alertConfig.missingLabels ${JSON.stringify(alertConfig.missingLabels)}`)
+            }
+          })
+        })
+        // firstCount = clsCount.vals()
+        // clsCount.vals()
+        // */
+
+        // this.$data.alertConfigs.map( (alertConfig) => {
+        //   console.log(`checking ${alertConfig.title}`)
+        //   let exists = alertConfig.existingLabels.some(contains)
+        //   let containsMissing = alertConfig.missingLabels.every(contains)
+        //   console.log(`exists ${exists}\ncontainsMissing ${containsMissing}`)
+        //   if (exists && (!containsMissing)) {
+        //     console.log("alert")
+        //     let alert = {
+        //       "type": alertConfig.title,
+        //       "classes": classes,
+        //       "priority": alertConfig.priority,
+        //       "date": date
+        //     }
+        //     that.$data.alerts.push(alert)
+        //   } else {
+        //     console.log("no alert")
+        //     console.log(`classes ${JSON.stringify(classes)}\n alertConfig.existingLabels ${JSON.stringify(alertConfig.existingLabels)}\n alertConfig.missingLabels ${JSON.stringify(alertConfig.missingLabels)}`)
+        //   }
+        // })
+
+        // let difference = new Set([...classes].filter(x => !missingLabels.has(x)))
+
+        // if any of the missingLabels are not in classes
+        //let missing = missingLabels.filter(label => classes.includes(label) == true)
+      },
+      adjustRec(ev) {
+        console.log("adjusting rectangle")
+        var canvas = this.$refs.canvas_draw
+        var width = canvas.offsetWidth
+        var height = canvas.offsetHeight
+        var ctx = canvas.getContext("2d")
+        var ctxCoords = canvas.getBoundingClientRect()
+        var mouseX = ev.clientX - ctxCoords.left  // ev.layerX //width - ev.
+        var mouseY = ev.clientY - ctxCoords.top
+
+        console.log(`mouseX ${mouseX}`)
+        console.log(`mouseY ${mouseY}`)
+
+      },
+      hover(ev) {
+        var canvas = this.$refs.canvas_cursor
+        console.log("hovering canvas")
+        var ctx = canvas.getContext("2d")
+        var ctxCoords = canvas.getBoundingClientRect()
+        var mouseX = ev.clientX - ctxCoords.left  // ev.layerX //width - ev.
+        var mouseY = ev.clientY - ctxCoords.top
+
+        if (this.$data.drawing) {
+          console.log("previewing rectangle")
+          // ctx.arc(mouseX, mouseY, 2, 0, 2 * Math.PI);
+          let recStartX = this.$data.recStart['x']
+          let recStartY = this.$data.recStart['y']
+          ctx.clearRect(0,0, canvas.width, canvas.height)
+          ctx.beginPath();
+          /*
+          if (recStartY > mouseY) {
+            var yStart = recStartY
+            var yEnd = mouseY
+          } else {
+            var yStart = mouseY
+            var yEnd = recStartY
+          }
+
+          if (recStartX > mouseX) {
+            var xStart = recStartX
+            var xEnd = mouseX
+          } else {
+            var xStart = mouseX
+            var xEnd = recStartX
+          }
+          let recWidth = xEnd - xStart
+          let recHeight = yEnd - yStart
+          */
+          //
+          // ctx.scale(-1, 1)
+          console.log("drawing preview rectangle")
+          console.log(`mouseX ${mouseX} mouseY ${mouseY}`)
+          let recWidth = mouseX - recStartX
+          let recHeight = mouseY - recStartY
+          console.log(`recWidth ${recHeight} recHeight ${recHeight}`)
+          ctx.rect(recStartX, recStartY, recWidth, recHeight)
+          ctx.stroke();
+          console.log("drew preview rectangle")
+        } else { //if (this.$data.previewCursor) {
+          console.log("updating cursor")
+          ctx.clearRect(0,0, canvas.width, canvas.height)
+          ctx.beginPath();
+          ctx.strokeStyle = "white"
+          ctx.arc(mouseX, mouseY, 3, 0, 2 * Math.PI);
+          ctx.fillStyle = "white";
+          ctx.fill();
+          ctx.font = '20px IBM Plex Sans';
+          ctx.fillText(`Click to begin drawing ROI`, mouseX + 10, mouseY + 5)
+          ctx.stroke();
+        }
+      },
+
+      drawROI() {
+        console.log("user clicked draw roi")
+        this.$data.instructionsROI = "Click point on video stream to begin drawing ROI"
+        // var canvas = this.$refs.canvas_cursor
+        // var ctx = canvas.getContext("2d")
+        // ctx.font = "16px Arial";
+        // ctx.fillStyle = "white";
+        // ctx.beginPath();
+        // ctx.fillText("Click to begin drawing", canvas.offsetWidth / 2, 5)
+        // ctx.stroke()
+      },
+      startRectangle() {
+        console.log("starting rectangle")
+      },
+      endRectangle() {
+        console.log("ending rectangle")
+      },
+      draw(ev) {
+        console.log(ev)
+        var canvas = this.$refs.canvas_draw
+        // canvas.width = canvas.offsetWidth
+        // canvas.height = canvas.offsetHeight
+        var width = canvas.offsetWidth
+        var height = canvas.offsetHeight
+        this.$data.roiWidth = width
+        this.$data.roiHeight = height
+        // TODO, this breaks the inference modal view, removing for now
+        // canvas.width = canvas.offsetWidth
+        // canvas.height = canvas.offsetHeight
+        var ctx = canvas.getContext("2d")
+        var ctxCoords = canvas.getBoundingClientRect()
+        var xRatio = this.$refs.canvas_draw.width
+        var yRatio = this.$refs.canvas_draw.height
+        var mouseX = ev.clientX - ctxCoords.left  // ev.layerX //width - ev.
+        var mouseY = ev.clientY - ctxCoords.top
+
+        /*
+        console.log(`coords \n\nctxCoords.left ${ctxCoords.left} \nctxCoords.right ${ctxCoords.right} \ntop ${ctxCoords.top} \nbottom ${ctxCoords.bottom} `)
+        // var mouseX = ev.layerX //clientX
+        // var mouseY = ev.layerY //clientY
+        console.log(`width ${width} height ${height}`)
+        console.log(`ev.pageX ${ev.pageX} ev.offsetX ${ev.offsetX} `)
+        console.log(`ev.pageY ${ev.pageY} ev.offsetY ${ev.offsetY} `)
+        console.log(`ev.layerX ${ev.layerX} ev.layerY ${ev.layerY} `)
+        console.log(`ev.clientX ${ev.clientX} ev.clientY ${ev.clientY} `)
+        console.log(`ev.screenX ${ev.screenX} ev.screenY ${ev.screenY} `)
+        */
+        /*
+        // ctx.beginPath();
+        // ctx.rect(10, 10, 20, 20)
+        // ctx.stroke();
+        console.log(`mouseX ${mouseX}`)
+        console.log(`mouseY ${mouseY}`)
+
+
+
+        // var mouseX = ev.pageX - ev.offsetX
+        // var mouseY = ev.pageY - ev.offsetY
+
+        // var mouseX = ev.pageX - ctxCoords.left  // ev.layerX //width - ev.
+        // var mouseY = ev.pageY - ctxCoords.top
+        */
+
+        ctx.beginPath();
+        // ctx.arc(mouseX, mouseY, 5, 0, 2 * Math.PI);
+        // ctx.stroke();
+
+        var drawing = ! this.$data.drawing
+        if (drawing) {
+          console.log(`---- starting new rectangle at points ${mouseX} ${mouseY}`)
+          ctx.clearRect(0,0,width, height)
+          // ctx.beginPath();
+          this.$data.recStart = {'x': mouseX, 'y': mouseY}
+          console.log("set beginning points")
+          console.log(this.$data.recStart)
+          // ctx.rect(20, 20, 100, 100);
+          this.$data.drawing = drawing
+        } else {
+          // end rectangle
+          console.log(`---- ending rectangle at points ${mouseX} ${mouseY}`)
+          this.$data.recEnd = {'x': mouseX, 'y': mouseY}
+          // calculate bounding boxes
+          let minX = Math.min(this.$data.recEnd['x'], this.$data.recStart['x'])
+          let maxX = Math.max(this.$data.recEnd['x'], this.$data.recStart['x'])
+          let minY = Math.min(this.$data.recEnd['y'], this.$data.recStart['y'])
+          let maxY = Math.max(this.$data.recEnd['y'], this.$data.recStart['y'])
+          this.$data.recBoundingBoxes = {
+            xmin: minX,
+            xmax: maxX,
+            ymin: minY, // remember in canvas, y starts from top, so it is technically inverted
+            ymax: maxY
+          }
+          ctx.strokeStyle = "blue";
+          let recWidth = maxX - minX
+          let recHeight = maxY - minY
+          console.log(`minX ${minX} maxX ${maxX}`)
+          console.log(`minY ${minY} maxY ${maxY}`)
+          console.log(`recWidth ${recWidth} recHeight ${recHeight}`)
+          ctx.rect(minX, minY, recWidth, recHeight)
+          ctx.stroke();
+          this.$data.drawing = drawing
+        }
+      },
+      showTooltip(ev) {
+        console.log(ev)
+      },
+      sortInferences(ev) {
+
+      },
+      printColors() {
+        // var c = this.$refs.donut_chart
+
+        // /*
+        // */
+
+        // console.log(c.getFillColor())
+        // color: {"scale": {"dsf": "ff7e00"}}
+      },
+      genLineData() {
+        // inferencesByCategory['negative']
+        // Object.keys(inferencesByCategory['negative']).map( (id) => {
+        //   inferencesByCategory['negative'][id]
+        // })
+
+        // [created_date]
+
+        // {
+    		// 		"group": "Dataset 1",
+    		// 		"key": "Qty",
+    		// 		"value": 65000
+    		// },
+
+        // this.$data.inferences.map((inf) => {
+        //   this.checkClasses(inf, this.$data.selected_good_labels).length
+        // })
+      },
+      parseDate(date) {
+        var parsedDate = Date.parse(d)
+        return `${parsedDate.getYear()}/${parsedDate.getMonth()}/${parsedDate.getDay()} ${parsedDate.getHours()}:${parsedDate.getMinutes()}:${parsedDate.getSeconds()}`
+      },
+      mergeImagesToVideo(stillImages, formData) {
+        // this.$data.stillImages
+        let options = {
+          method: "POST",
+          body: formData
+        }
+        let url = `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/mergeframes`
+        console.log(url)
+        fetch(url, options).then( (res) => {
+          res.blob().then( (vid) => {
+             console.log("received merged video")
+             let localUrl = URL.createObjectURL(vid)
+             this.$refs.remote_video.src = localUrl
+             console.log(localUrl)
+          })
+        })
+      },
+      adjustDrawCanvas() {
+        // var vidWidth = that.$refs.remote_video.offsetWidth
+        // var vidHeight = that.$refs.remote_video.offsetHeight
+        // var topMargin = that.$refs.remote_video_div.offsetTop + "px"
+
+        // that.$refs.canvas_draw.width = vidWidth
+        // that.$refs.canvas_draw.height = vidHeight
+        // document.getElementById('canvas_draw_div').style.top
+        // /*
+        console.log("resizing canvas")
+        var vidWidth = this.$refs.remote_video.offsetWidth
+        var vidHeight = this.$refs.remote_video.offsetHeight
+        var topMargin = this.$refs.remote_video_div.offsetTop + "px"
+        console.log(`setting height ${vidHeight}`)
+
+        this.$refs.canvas.width = vidWidth
+        this.$refs.canvas.height = vidHeight
+
+        this.$refs.canvas_draw.width = vidWidth
+        this.$refs.canvas_draw.height = vidHeight
+        this.$refs.canvas_draw_div.style.top = topMargin
+        this.$refs.canvas_draw_div.height = vidHeight
+        this.$refs.canvas_good.width = vidWidth
+        this.$refs.canvas_bad.width = vidWidth
+        this.$refs.canvas_good.height = vidHeight
+        this.$refs.canvas_bad.height = vidHeight
+        // this.$refs.canvas_good_draw_div.height = vidHeight
+        // this.$refs.canvas_bad_draw_div.height = vidHeight
+        this.$refs.canvas_good_draw_div.style.top = topMargin
+        this.$refs.canvas_bad_draw_div.style.top = topMargin
+
+        this.$refs.canvas_cursor.width = vidWidth
+        this.$refs.canvas_cursor.height = vidHeight
+        this.$refs.canvas_cursor_div.style.top = topMargin
+        this.$refs.canvas_cursor_div.height = vidHeight
+        console.log("done resizing")
+        // */
+      },
+      uploadFile() {
+        this.$data.streamingType = "file"
+        this.$data.isStreaming = true
+        this.$refs.video.style.visibility = "hidden"
+        this.$refs.remote_video.style.visibility = "visible"
+        this.$refs.remote_video.style['z-index'] = 2000
+        this.$data.videoPlaying = true
+
+
+        var formData = new FormData()
+
+        var files = this.$refs.fileUploader.internalFiles
+        var stillImages = []
+        files.map( (file, idx) =>  {
+          console.log(file)
+          let fileType = file.file.type
+          let isImage = ((fileType.includes('png')) || (fileType.includes('jpg')) || (fileType.includes('jpeg')))
+          if (isImage) {
+            console.log("handling still image")
+            console.log(file)
+            let localUrl = window.URL.createObjectURL(file.file)
+            console.log(localUrl)
+            console.log(file)
+            this.$data.localFileSrc = localUrl
+            // this.$refs.remote_video.poster = localUrl
+            // this.$data.stillImages.push(file.file)
+            stillImages.push(file.file)
+            formData.append(`file${idx}`, file.file, file.file.name)
+            if (idx == (files.length - 1) ) {
+              console.log("merging still images")
+              // post still images to backend to create video/slideshow
+              this.mergeImagesToVideo(stillImages, formData)
+            }
+          } else {
+            console.log("video uploaded, playing")
+            let localUrl = window.URL.createObjectURL(file.file)
+            this.$data.localFileSrc = localUrl
+            this.$refs.remote_video.src = localUrl
+            this.adjustDrawCanvas()
+          }
+        })
+
+        var that = this;
+        // adjust size of canvas
+        /*
+        this.$refs.remote_video.onloadeddata = function() {
+          console.log("remote video loaded, adjusting drawing canvas")
+          // that.$refs.canvas_draw.offsetWidth = that.$refs.remote_video.offsetWidth
+          // that.$refs.canvas_draw.offsetHeight = that.$refs.remote_video.offsetHeight
+          var vidWidth = that.$refs.remote_video.offsetWidth
+          var vidHeight = that.$refs.remote_video.offsetHeight
+          var topMargin = that.$refs.remote_video_div.offsetTop + "px"
+          console.log(that.$refs.remote_video.offsetHeight)
+          that.$refs.canvas_draw.width = vidWidth
+          that.$refs.canvas_draw.height = vidHeight
+
+          // document.getElementById('canvas_draw_div').style.top
+          console.log(`vidWidth ${vidWidth} vidHeight ${vidHeight}`)
+          that.$refs.canvas_draw_div.style.top = topMargin
+          that.$refs.canvas_good.width = vidWidth
+          that.$refs.canvas_bad.width = vidWidth
+          that.$refs.canvas_good.height = vidHeight
+          that.$refs.canvas_bad.height = vidHeight
+
+          that.$refs.canvas_good_draw_div.height = vidHeight
+          that.$refs.canvas_bad_draw_div.height = vidHeight
+          that.$refs.canvas_good_draw_div.style.top = topMargin
+          that.$refs.canvas_bad_draw_div.style.top = topMargin
+
+          that.$refs.canvas_cursor.width = vidWidth
+          that.$refs.canvas_cursor.height = vidHeight
+          that.$refs.canvas_cursor_div.style.top = topMargin
+
+          // that.$refs.canvas_draw.offsetWidth = that.$refs.remote_video.offsetWidth
+          // that.$refs.canvas_draw.offsetHeight = that.$refs.remote_video.offsetHeight
+
+        }
+        */
+      },
+      restartStream() {
+        console.log("end event triggered, restarting stream")
+        console.log("this.$data.videoPlaying")
+        console.log(this.$data.videoPlaying)
+        if ((this.$data.videoPlaying) && (this.$data.streamingType == 'file')) {
+          console.log('restarting stream')
+          // this.uploadFile()
+          console.log(this.$refs.fileUploader.internalFiles)
+          this.$refs.remote_video.src = this.$data.localFileSrc
+        }
+        else if ((this.$data.videoPlaying) && (this.$data.streamingType == 'youtube')) {
+          this.stream()
+        }
+        else if ((this.$data.videoPlaying) && (this.$data.streamingType == 'rtsp')) {
+          this.stream()
+        } else {
+          console.log("stream stopped by user")
+
+        }
+      },
+      stream() {
+        // var Youtube = new this.$Youtube()
+        // console.log("Youtube")
+        // console.log(Youtube)
+        // return
+        this.hideModal({name: "configure-stream-modal"})
+        var url = `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/stream`
+        var payload = {
+          url: this.$data.rtsp_url,
+          port: this.$data.rtsp_port,
+          username: this.$data.rtsp_username,
+          password: this.$data.rtsp_password,
+          action: "start"
+        }
+
+        var options = {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+
+        this.$data.videoPlaying = true
+        console.log("starting stream")
+        console.log("set this.$data.videoPlaying")
+        console.log(this.$data.videoPlaying)
+
+        console.log(options)
+        fetch(url, options).then((res) => {
+          if ((this.$data.rtsp_url.toLowerCase().includes('youtube')) || (this.$data.rtsp_url.includes('you.tu'))) {
+            console.log("loading youtube")
+            console.log(`res ${res}`)
+            this.$data.streamingType = "youtube"
+            this.$data.isStreaming = true
+            // this.$refs.video.style.visibility = "hidden"
+            this.$refs.remote_video.style.visibility = "visible"
+            this.$refs.remote_video.pause()
+            this.$refs.remote_video.src = ""
+
+            res.json().then( (res) => {
+              console.log(res)
+              console.log(`setting vid stream ${res.url}`)
+              // this.$refs.remote_video.src = res.url
+              //
+              this.$refs.remote_video.src = `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/ytstream`
+              this.$refs.remote_video.load()
+              // adjusting drawing canvas
+              // onload
+              // this.$refs.remote_video.oncanplaythrough = this.adjustDrawCanvas()
+              /*
+              this.$refs.remote_video.onloadstart = function() {
+                console.log("loadstart event")
+                console.log("youtube video loaded, adjusting drawing canvas")
+                var vidWidth = this.$refs.remote_video.offsetWidth
+                var vidHeight = this.$refs.remote_video.offsetHeight
+                var topMargin = this.$refs.remote_video_div.offsetTop + "px"
+                console.log(`setting height ${vidHeight}`)
+
+                this.$refs.canvas_draw.width = vidWidth
+                this.$refs.canvas_draw.height = vidHeight
+                this.$refs.canvas_draw_div.style.top = topMargin
+                this.$refs.canvas_good.width = vidWidth
+                this.$refs.canvas_bad.width = vidWidth
+                this.$refs.canvas_good.height = vidHeight
+                this.$refs.canvas_bad.height = vidHeight
+                this.$refs.canvas_good_draw_div.height = vidHeight
+                this.$refs.canvas_bad_draw_div.height = vidHeight
+                this.$refs.canvas_good_draw_div.style.top = topMargin
+                this.$refs.canvas_bad_draw_div.style.top = topMargin
+                this.$refs.canvas_cursor.width = vidWidth
+                this.$refs.canvas_cursor.height = vidHeight
+                this.$refs.canvas_cursor_div.style.top = topMargin
+
+              }
+              */
+
+              // this.$refs.remote_video.onloadeddata = function() {
+              //   console.log("loadeddata event")
+              // }
+
+              // }
+
+            })
+          } else {
+            // TODO, confirm draw still works here
+            console.log("stream started")
+            this.$data.isStreaming = true
+            this.$refs.stream_canvas.style.height = "360px"
+            this.$refs.stream_canvas.style.offsetHeight = "360px"
+            this.$refs.stream_canvas.style.visibility = 'visible'
+            this.$refs.canvas.style.visibility = 'hidden'
+            this.$refs.video.style.visibility = 'hidden'
+            this.$refs.video.style.height = "0px"
+            this.$data.streamingType = "rtsp"
+
+            var proxyIp = this.$data.proxyServerIp
+            var wsPort = 6004
+            if (proxyIp) {
+              var wsEndpoint = `ws://${proxyIp}:${wsPort}`.replace('http://', '').replace('https://', '')
+            } else {
+              var wsEndpoint = `ws://localhost:${wsPort}`
+            }
+            this.player = new JSMpeg.Player(wsEndpoint, {
+              canvas: document.getElementById('stream_canvas'),
+              disableGl: true
+            })
+            var vidWidth = this.$refs.stream_canvas.offsetWidth
+            var vidHeight = this.$refs.stream_canvas.offsetHeight
+            var topMargin = this.$refs.stream_canvas.offsetTop + "px"
+            this.$refs.canvas_draw.width = vidWidth
+            this.$refs.canvas_draw.height = vidHeight
+            // document.getElementById('canvas_draw_div').style.top
+            console.log(`vidWidth ${vidWidth} vidHeight ${vidHeight}`)
+            this.$refs.canvas_draw_div.style.top = topMargin
+            this.$refs.canvas_good.width = vidWidth
+            this.$refs.canvas_bad.width = vidWidth
+            this.$refs.canvas_good_draw_div.height = vidHeight
+            this.$refs.canvas_bad_draw_div.height = vidHeight
+            this.$refs.canvas_good.height = vidHeight
+            this.$refs.canvas_bad.height = vidHeight
+
+            this.$refs.canvas_good_draw_div.style.top = topMargin
+            this.$refs.canvas_bad_draw_div.style.top = topMargin
+
+          }
+
+        }).catch( err => console.log(`starting stream error ${err} `))
+      },
+      stopStream(){
+
+
+        var canvas = this.$refs.canvas_draw
+        var ctx = canvas.getContext("2d")
+        ctx.clearRect(0,0,canvas.width, canvas.height)
+
+        var url = `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/stream`
+        var options = {
+          method: "POST",
+          body: JSON.stringify({
+            action: "stop"
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+        this.$data.videoPlaying = false
+        this.$data.loadingText = ""
+        this.$data.loadingState = "loaded"
+        this.$refs.stream_canvas.style.visibility = 'hidden'
+        // this.$refs.stream_canvas.style.height = '0px'
+        this.$refs.remote_video.style.visibility = 'hidden'
+        // this.$refs.canvas.style.visibility = 'visible'
+        this.$refs.video.style.visibility = 'visible'
+        this.$refs.video.style.height = "480px"
+
+        fetch(url, options).then((res) => {
+          console.log("stopping stream")
+          this.$data.isStreaming = false
+          if (this.player) {
+            console.log(this.player)
+            this.player.stop()
+          }
+        }).catch( err => console.log(`getting models error ${err} `))
+      },
+      getCount() {
+        var type = this.$data.inferences[0]['analysis_type']
+        if (type == 'classification') {
+          console.log("getting classification labels")
+          var labels = this.$data.inferences.map( (inf) =>  {
+            return inf.classified.map(res => res.name)
+          })
+          console.log(labels)
+        } else {
+          console.log("getting obj detection labels")
+          var labels = this.$data.inferences.map( (inf) =>  {
+            return inf.classified.map(res => res.label)
+          })
+        }
+
+        var all_labels = [].concat.apply([],labels)
+        var uniqLabels = new Set(all_labels)
+        console.log(`uniqLabels ${uniqLabels}`)
+        console.log(`all_labels ${all_labels}`)
+        // { "apple":1, "banana": 3 }
+        var counts = {}
+        all_labels.map( (l, idx) => {
+          if (Object.keys(counts).includes(l)) {
+            counts[l] += 1
+          } else {
+            counts[l] = 1
+          }
+          if (idx == (all_labels.length - 1)) {
+            this.$data.counts = counts
+            this.$data.countGenerated = true
+            this.$data.plotlyData[0].labels = Object.keys(counts)
+            this.$data.plotlyData[0].values = Object.values(counts)
+            this.genChartData(counts)
+            // console.log("done counting ")
+            // console.log(counts)
+            // return counts
+          }
+        })
+      },
+      genChartData(counts) {
+        console.log("updating chart data")
+        var updatedChartData =  Object.keys(counts).map( (c) => { return {group: c, value: counts[c] }} )
+        console.log(`updatedChartData`)
+        console.log(updatedChartData)
+        this.$data.chartData = updatedChartData
+        this.$data.chartRedraw += 1
+      },
+      getStats() {
+      },
+      loadModelConfig(modelName) {
+        console.log(`checking configs for ${modelName}`)
+        console.log(JSON.stringify(this.$data.modelConfigs))
+        if ( Object.keys(this.$data.modelConfigs).includes(modelName)) {
+          console.log("loading model config")
+          this.$data.selected_good_labels = this.$data.modelConfigs[modelName]['good'] || []
+          this.$data.selected_bad_labels = this.$data.modelConfigs[modelName]['bad'] || []
+        }
+      },
+      updateModelConfig() {
+        //if ( Object.keys(this.$data.selectedModel).length > 0 ) {
+        console.log("in updateModelConfig")
+        // selected_good_labels = ["Bird Guards","Conductor Damaged","Conductor Good"]
+        // let colors = {}
+        // var good_labels_populated = false
+        // var bad_labels_populated = false
+        // selected_good_labels.map( (label) =>  {return { label: `rgb(0, ${Math.floor((Math.random() * 200) + 1) + 55},0)` }})
+
+        // generate random colors
+        if (this.$data.selected_good_labels) {
+          var timelineColors = {}
+          this.$data.selected_good_labels.map( (label, idx) => {
+            let randColor = `rgb(${Math.floor((Math.random() * 200) + 1) + 55}, ${Math.floor((Math.random() * 200) + 1) + 55}, ${Math.floor((Math.random() * 200) + 1) + 55})`
+            timelineColors[label] = randColor
+            if ((this.$data.selected_good_labels.length - 1) ==  idx ) {
+              console.log("setting timeline colors")
+              console.log(timelineColors)
+              // this.$data.timelineOptions.color.scale = {"employee": "blue", "aircraft": "yellow", "jetbridge_disconnected": "blue", "jetbridge_connected": "red", "cargo_open": "blue", "wheel_chocked": "blue", "beltloader_inuse": "blue", "beltloader_empty": "red", "beltloader_baggage": "red"}
+              // this.$data.timelineOptions.color.scale =  timelineColors
+            }
+            // green color
+            let color = `rgb(0, ${Math.floor((Math.random() * 200) + 1) + 55},0)`
+            this.$data.chartOptions.color.scale[label] = color
+            console.log(`updating good label ${idx} ${label}`)
+            this.$data.legend[label] = color
+            if (idx == (this.$data.selected_good_labels.length - 1) ) {
+              // this.$refs.donut_chart.forceUpdate()
+              console.log("good labels colors added")
+              console.log(this.$data.chartOptions.color.scale)
+              // this.$data.chartRedraw += 1
+              // good_labels_populated = true
+            }
+            console.log(this.$refs.donut_chart)
+          })
+        }
+        if (this.$data.selected_bad_labels) {
+          this.$data.selected_bad_labels.map( (label, idx) => {
+            // colors[label] = `rgb(${Math.floor((Math.random() * 200) + 1) + 55}, 0, 0)`
+            console.log(`updating bad label ${idx} ${label}`)
+            let color = `rgb(${Math.floor((Math.random() * 200) + 1) + 55}, 0, 0)`
+            this.$data.chartOptions.color.scale[label] = color
+            this.$data.legend[label] = color
+            if (idx == (this.$data.selected_bad_labels.length - 1) ) {
+              // this.$data.chartRedraw += 1
+              // this.$refs.donut_chart.forceUpdate()
+              console.log("bad labels colors added")
+              console.log(this.$data.chartOptions.color.scale)
+              // bad_labels_populated = true
+            }
+            console.log(this.$refs.donut_chart)
+          })
+        }
+        // if (bad_labels_populated && good_labels_populated) {
+          // console.log("updating chart colors")
+          // console.log(colors)
+          // this.$data.chartOptions.color.scale[] = colors
+        // }
+        //// stash in localStorage
+        if (this.$data.selectedModelName) {
+          console.log("updating config")
+          console.log(`good labels ${this.$data.selected_good_labels}`)
+          let modelName = this.$data.selectedModelName
+          let modelConfig = {
+              positive: this.$data.selected_good_labels || [],
+              negative: this.$data.selected_bad_labels || []
+          }
+          this.$data.modelConfigs[modelName] = modelConfig
+          console.log("saved new modelconfigs")
+          console.log(this.$data.modelConfigs)
+          localStorage.setItem('modelConfigs', JSON.stringify(this.$data.modelConfigs))
+        }
+        this.hideModal({'name': 'configure-model-modal'})
+      },
+      setModel(modelName) {
+        console.log(this.$refs.modelSelector)
+        var modelName = this.$data.selectedModelName
+        console.log(modelName)
+        var filteredModels = this.$data.models.filter(m => m.name == modelName)
+        console.log( `${filteredModels.length} matching models found}` )
+        if (filteredModels.length > 0) {
+          console.log("model found, selecting")
+          console.log(filteredModels[0])
+          // name, label, value
+          var multiSelectOpts = filteredModels[0].categories.map( category => {
+           return {
+                    name: category.category_name,
+                    label: category.category_name,
+                    value: category.category_name
+                  }
+          })
+          console.log(multiSelectOpts)
+          this.$data.good_labels = multiSelectOpts
+          this.$data.bad_labels = multiSelectOpts
+          console.log(`multiSelectOpts ${JSON.stringify(multiSelectOpts)}`)
+          this.$data.selectedModel = filteredModels[0]
+          this.loadModelConfig(modelName)
+        }
+      },
+      checkInference(inference, labels) {
+        var results = inference.classified
+        var labels_lowered = labels.map(l => l.toLowerCase())
+        var threshold = 75
+        var matches = results.filter(value => labels_lowered.includes(value.label) )
+      },
+
+      sortClasses(type, inferences) {
+
+      },
+      checkClasses(inference, inputLabels=[], type=null) {
+        // inference.classified.filter(value => selected_good_labels.map(l => l.toLowerCase()).includes(value.label)).length > 0
+
+        // if (inputLabels.length = 0) {
+        //   return []
+        // }
+        var labels = inputLabels.map(l => l.toLowerCase())
+        // if typeof(inference.classified) == 'object'
+        // var inference = inf.classified
+        console.log("inference")
+        console.log(inference)
+
+        console.log("inference.classified")
+        console.log(inference.classified)
+
+        console.log(`inference.analysis_type ${inference.analysis_type}`)
+        if (inference.analysis_type == 'object_detection') {
+          console.log("detecting object")
+          console.log(`labels ${labels} ${JSON.stringify(inference.classified)}`)
+          // var threshold = 0.80
+          var filtered_inference = inference.classified.filter( value =>
+            (labels.includes(value.label.toLowerCase()) && ( (value.confidence * 100) > this.$data.threshold)) )
+          console.log(`filtered_inference ${filtered_inference} `)
+          // this.$data.selected_labels[type] = filtered_inference
+          if (filtered_inference.length > 0) {
+            this.$data.inferencesByCategory[type][inference['_id']] = inference
+          }
+          return filtered_inference
+
+        } else {
+          console.log("checking classification labels")
+          console.log("labels")
+          console.log(labels)
+          var filtered_inference = inference.classified.filter( value =>
+            (labels.includes(value.name.toLowerCase()) && ( (value.confidence * 100) > this.$data.threshold)) )
+          console.log(filtered_inference)
+          if (filtered_inference.length > 0) {
+            this.$data.inferencesByCategory[type][inference['_id']] = inference
+          }
+          // this.$data.selected_labels[type] = filtered_inference
+          return filtered_inference
+          /*
+          // 1.2
+          if (labels.includes( Object.keys(inference.classified)[0].toLowerCase() ) ) {
+            console.log("label matches")
+            return [inference]
+          } else {
+            console.log("label doesn't match")
+            return []
+          }
+          */
+        }
+
+      },
+      t_o() {
+        // window.setTimeout( this.capture(), 1000 * seconds)
+          // let cap = this.capture
+          var that = this
+          return new Promise(resolve => {
+            console.log(`running interval after ${1000 * that.$data.interval}`)
+            setTimeout(() => {
+              resolve(that.capture());
+            }, 1000 * that.$data.interval) })
+      },
+      recursiveTo() {
+        var that = this
+        return new Promise(resolve => {
+          console.log(`running interval after ${1000 * that.$data.interval}`)
+          if (this.$data.loadingState == "loading") {
+              console.log("analyzing")
+              that.t_o().then(a =>
+                resolve(that.recursiveTo())
+              )
+          } else {
+                console.log("stopping")
+                resolve()
+          }
+
+        })
+      },
+      intervalCapture() {
+        console.log("starting interval")
+        var seconds = 9999
+        var that = this
+        this.$data.loadingState = "loading"
+        this.$data.loadingText = "Capturing Frame every " + this.$data.interval + " seconds"
+        this.recursiveTo()
+        // funcs = [...Array(seconds).keys()].map( s => that.t_o(s) )
+      },
+      getCanvasWidth() {
+        console.log("getting canvas width")
+        console.log(this.$refs.canvas.width)
+        return this.$refs.canvas.width
+      },
+      getCanvasHeight() { return this.$refs.canvas.height},
+      capture() {
+          if ( Object.keys(this.selectedModel).length == 0) {
+            console.log("no model selected")
+            // return
+          }
+          var that = this
+          var date = new Date(Date.now())
+          console.log(`capturing at ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`)
+          if ((this.$data.isStreaming) && (this.$data.streamingType == 'rtsp')) {
+            console.log("sampling rtsp feed")
+            this.canvas = this.$refs.stream_canvas;
+            var width = this.canvas.offsetWidth
+            var height = this.canvas.offsetHeight
+            var context = this.canvas.getContext("2d").drawImage(this.$refs.stream_canvas, 0, 0) //, width, height);
+            var canvas_url = this.canvas.toDataURL('image/png') //document.getElementById('stream_canvas').toDataURL('png')
+          } else if ((this.$data.isStreaming) && ((this.$data.streamingType == 'youtube') || (this.$data.streamingType == 'file')  ) ) {
+            console.log("sampling youtube video")
+            this.canvas = this.$refs.canvas;
+            // var width = this.canvas.offsetWidth
+            // var height = this.canvas.offsetHeight
+
+            var width = this.$refs.remote_video.offsetWidth
+            var height = this.$refs.remote_video.offsetHeight
+            console.log(`sampling size ${width} ${height}`)
+            var context = this.canvas.getContext("2d").drawImage(this.$refs.remote_video, 0, 0, width, height);
+            // var image = context.drawImage(this.$refs.remote_video, 0, 0, width, height);
+            var canvas_url = this.canvas.toDataURL("image/png")
+
+          } else { // webcam
+            console.log("sampling webcam video")
+            this.$refs.stream_canvas.style.visibility = 'hidden'
+            // this.$refs.canvas.style.visibility = 'visible'
+            this.canvas = this.$refs.canvas;
+            var width = this.canvas.offsetWidth
+            var height = this.canvas.offsetHeight
+            var context = this.canvas.getContext("2d").drawImage(this.video, 0, 0, width, height);
+            // var image = context.drawImage(this.video, 0, 0, width, height);
+            var canvas_url = this.canvas.toDataURL("image/png")
+          }
+          // console.log(image)
+          this.captures.push(canvas_url);
+          /*
+          var i = new Image();
+          i.onload = function(){
+           console.log("base")
+           console.log( i.width+", "+i.height );
+           console.log( i.naturalWidth+", "+i.naturalHeight );
+          };
+
+          i.src = canvas_url;
+          */
+
+
+          // TODO! Make canvas url match with width and height
+          // console.log(`captured canvas url dims`)
+          // console.log(`width ${width} height ${height}`)
+
+          // console.log(`width ${this.canvas.width} height ${this.canvas.height}`)
+
+          // var draw_canvas = this.$refs.canvas_draw;
+          // console.log(`draw_canvas.width ${draw_canvas.width} draw_canvas.height ${draw_canvas.height}`)
+
+          this.canvas.toBlob(function(blob){ that.submitInference(blob, canvas_url, width, height)}, 'image/png'); // JPEG at 95% quality
+
+          // this.canvas.toBlob(
+          //   blob => this.submitInference(blob, canvas_url)
+          // )
+          // this.submitInference(canvas_url)
+      },
+      show() {
+           this.$refs.view.method('show')();
+      },
+      dragOverHandler(ev) {
+        console.log('File(s) in drop zone');
+        ev.preventDefault();
+      },
+      dropHandler(ev) {
+        console.log('File(s) dropped');
+        // hideModal({'name': 'upload-modal'})
+        // Prevent default behavior (Prevent file from being opened)
+        ev.preventDefault();
+        this.$data.filenames = []
+        if (ev.dataTransfer.items) {
+          // Use DataTransferItemList interface to access the file(s)
+          for (var i = 0; i < ev.dataTransfer.items.length; i++) {
+            // If dropped items aren't files, reject them
+            if (ev.dataTransfer.items[i].kind === 'file') {
+              var file = ev.dataTransfer.items[i].getAsFile();
+              var s = file.text().then( (text) => {
+                this.$data.inference_rows = []
+                var rows = text.split(/\r\n|\n/)
+                var h = rows[0].split(',');
+                // if ( h.length > 10 ) {
+                //   csv_type = "Mobile"
+                // }
+                // this.$data.inference_headers = h
+                var min_row_length = 20 // TODO, added here in case of empty row / trailing spaces in csv.
+                var row_data = {}
+                var h_obj = h.map( (h) => { row_data[h] = "" } )
+                if (h_obj) {
+                  rows.slice(1).map( (r, r_idx) => {
+                      var row_elements = r.split(',')
+                      var row_data_copy = Object.create(row_data)
+                      row_elements.map( (c, idx) => {
+                        console.log(`adding column data ${c} ${idx}`)
+                        row_data_copy[h[idx]] = c
+                        // console.log( `${idx} / ${row.length - 1}` )
+
+                        if ((idx == (row_elements.length - 1)) && (JSON.stringify(row_data_copy).length > min_row_length)) {
+                          console.log(`appending row ${r_idx}`)
+                          console.log(JSON.stringify(row_data_copy))
+                          this.$data.inference_rows.push(row_data_copy)
+                          this.$data.inference_rows_original.push(row_data_copy)
+                        }
+                      })
+                  })
+                }
+              } )
+              console.log('... file[' + i + '].name = ' + file.name);
+              console.log("printing text")
+              this.$data.filenames.push(file.name)
+              this.$data.files.push(file)
+             }
+            }
+          } else {
+              // Use DataTransfer interface to access the file(s)
+              for (var i = 0; i < ev.dataTransfer.files.length; i++) {
+                console.log('... file[' + i + '].name = ' + ev.dataTransfer.files[i].name);
+              }
+            }
+      },
+      addFilter() {
+        var filter_header = this.$data.filter_header
+        var filter_compare_type = this.$data.filter_compare_type
+        var filter_value = this.$data.filter_value
+        // query column based on options
+        // valid options are "less than", "greater than", "equal to", "contains"
+        console.log("adding filter")
+        console.log(filter_header, filter_compare_type, filter_value)
+        var ts = Date.now()
+        var filter = {}
+        this.$data.activeFilters[ts] = [filter_header, filter_compare_type, filter_value] //.push( filter )
+        if (filter_compare_type == 'less') {
+          var filtered_rows = this.$data.inference_rows_original.filter(row => parseFloat(row[filter_header]) < parseFloat(filter_value))
+          this.$data.inference_rows_filtered = filtered_rows
+          console.log(`reduced to ${filtered_rows.length}`)
+        } else if (filter_compare_type == 'greater') {
+          var filtered_rows = this.$data.inference_rows_original.filter(row => parseFloat(row[filter_header]) > parseFloat(filter_value))
+          this.$data.inference_rows_filtered = filtered_rows
+          console.log(`reduced to ${filtered_rows.length}`)
+        } else if (filter_compare_type == 'equal') {
+          var filtered_rows = this.$data.inference_rows_original.filter(row => row[filter_header] == filter_value)
+          this.$data.inference_rows_filtered = filtered_rows
+          console.log(`reduced to ${filtered_rows.length}`)
+        } else if (filter_compare_type == 'contains') {
+          var filtered_rows = this.$data.inference_rows_original.filter(row => row[filter_header].includes(filter_value))
+          this.$data.inference_rows_filtered = filtered_rows
+          console.log(`reduced to ${filtered_rows.length}`)
+          // console.log("filtered to " this.$data.inference_rows_filtered)
+        }
+      },
+      filterRows(){
+        var filters = this.$data.activeFilters
+        var filterFuncs = []
+        var filtered_rows_total = this.$data.inference_rows_original
+        Object.keys(filters).map( (ts, idx) => {
+          // filters[ts]
+          var filter_header = filters[ts][0]
+          var filter_compare_type = filters[ts][1]
+          var filter_value = filters[ts][2]
+
+          var filter_less = (a, b) => a < b
+          var filter_more = (a, b) => a > b
+          var filter_equal = (a, b) => a == b
+          var filter_contains = (a, b) => a.includes(b)
+
+          // const filteredData = filters.reduce((d, f) => d.filter(f) , data)
+          // if (filter_compare_type == 'less') {
+          //   filterFuncs.append( filter_less() )
+          // }
+
+          if (filter_compare_type == 'less') {
+            filtered_rows_total = filtered_rows_total.filter(row => parseFloat(row[filter_header]) < parseFloat(filter_value))
+            if (idx == (filters.length - 1)) {
+              this.$data.inference_rows = filtered_rows_total
+            }
+            // this.$data.inference_rows_filtered = filtered_rows
+            // console.log(`reduced to ${filtered_rows.length}`)
+          } else if (filter_compare_type == 'greater') {
+            filtered_rows_total = filtered_rows_total.filter(row => parseFloat(row[filter_header]) > parseFloat(filter_value))
+            if (idx == (filters.length - 1)) {
+              this.$data.inference_rows = filtered_rows_total
+            }
+            // this.$data.inference_rows_filtered = filtered_rows
+            // console.log(`reduced to ${filtered_rows.length}`)
+          } else if (filter_compare_type == 'equal') {
+            filtered_rows_total = filtered_rows_total.filter(row => row[filter_header] == filter_value)
+            if (idx == (filters.length - 1)) {
+              this.$data.inference_rows = filtered_rows_total
+            }
+            // this.$data.inference_rows_filtered = filtered_rows
+            // console.log(`reduced to ${filtered_rows.length}`)
+          } else if (filter_compare_type == 'contains') {
+            filtered_rows_total = filtered_rows_total.filter(row => row[filter_header].includes(filter_value))
+            if (idx == (filters.length - 1)) {
+              this.$data.inference_rows = filtered_rows_total
+            }
+            // this.$data.inference_rows_filtered = filtered_rows
+            // console.log(`reduced to ${filtered_rows.length}`)
+            // console.log("filtered to " this.$data.inference_rows_filtered)
+          }
+        })
+      },
+      removeFilter(f){
+        console.log(f)
+        // this.$data.activeFilters[ts]
+        // var matchingFilter = this.$data.activeFilters.filter(filter => { (filter[0] == f[0]) && (filter[1] == f[1]) && (filter[2] == f[2]) } )
+        var aFilters = this.$data.activeFilters
+        Object.keys(aFilters).map( (filter) => {
+          if ((aFilters[filter][0] == f[0]) && (aFilters[filter][1] == f[1]) && (aFilters[filter][2] == f[2])) {
+            console.log(`found matching filter, removing {filter}`)
+            // this.$data.activeFilters.pop(aFilters)
+            delete this.$data.activeFilters[filter]
+            console.log(this.$data.activeFilters)
+            var filtered_rows = this.$data.inference_rows_original.filter(row => row[filter_header].includes(filter_value))
+            this.$data.inference_rows = filtered_rows
+            // this.$data.inference_rows_filtered = filtered_rows
+          }
+        } )
+      },
+
+      parseDate(d) {
+        var dateObj = (new Date(Date.parse(d)))
+        // var r = date.getMonth() + date.getDay() + date.getYear()
+        var date = `${dateObj.getMonth()}/${dateObj.getDay()}/${dateObj.getFullYear()}`
+        var time = dateObj.toLocaleString('en-US', {
+          hour: 'numeric',
+          minute: 'numeric',
+          second: 'numeric',
+          hour12: true
+        })
+        return `${date} ${time}`
+      },
+      /*
+      getModels() {
+        //TODO, check for model classes
+        if ( ! this.$data.url) {
+          console.log("url not set yet")
+          return
+        }
+        var options = {
+          method: "GET",
+          headers: {
+            "X-Auth-Token": this.$data.token,
+          }
+        }
+        if (this.$data.edge) {
+          var url = `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/proxyget` + "/model-info"
+
+        } else {
+          var url = `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/proxyget` + "/api/trained-models"
+        }
+        // var url = `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/proxyget/api/trained-models`
+        // proxy needed for cors
+        fetch(url, options).then((res) => {
+          console.log("models received")
+          console.log("res")
+          console.log(res)
+          res.json().then((models) => {
+            // if ( models != {} ) {
+            if (this.$data.edge) {
+              this.$data.models = [models]
+              this.$data.allmodels = [models]
+            } else {
+              this.$data.models = models.filter( (m) => m.deployed == '1'  )
+              this.$data.allmodels = models
+            }            // }
+          }).catch( err => console.log(`parsing model json error ${err} `) )
+        }).catch( err => console.log(`getting models error ${err} `) )
+      },
+      */
+      drawRectStream(labelInRoi, width, cls, recWidth, recHeight,objectXMin, objectYMin, goodCtx, badCtx) {
+         // return new Promise( (resolve, reject) => {
+           console.log("draw rect promise")
+          let colors = ['blue', 'green', 'yellow', 'purple', 'red']
+          let labels = this.$data.selected_good_labels
+          var strokeStyle = colors[ labels.indexOf(cls['label'])]
+          console.log("strokeStyle")
+          console.log(strokeStyle)
+          console.log("labels")
+          console.log(labels)
+          console.log("cls")
+          var canvas = this.$refs.canvas_good
+          var ctx = canvas.getContext("2d")
+          console.log(cls)
+
+           if (strokeStyle) {
+
+             ctx.beginPath();
+             ctx.lineWidth = 2
+             ctx.strokeStyle = strokeStyle
+             ctx.fillStyle = strokeStyle
+             ctx.globalAlpha = 0.5
+
+             console.log(`drawing rectangle around object ${ctx.strokeStyle} ${ctx.lineWidth} ${cls['label']}`)
+             console.log(`location ${objectXMin}, ${objectYMin}, ${recWidth}, ${recHeight}`)
+             if (this.$data.markType == "rect") {
+               ctx.rect(objectXMin, objectYMin, recWidth, recHeight)
+               ctx.stroke();
+               ctx.globalAlpha = 0.05
+               ctx.fill();
+             } else {
+               // ctx.fillStyle = "green";
+               // let color = this.$data.timelineOptions.color.scale[cls['label']]
+               // let color = "green"
+               // ctx.fillStyle = color
+               // ctx.strokeStyle = color
+               ctx.globalAlpha = 1.0
+               ctx.arc(objectXMin, objectYMin, 3, 0, 2 * Math.PI);
+               ctx.stroke();
+               ctx.fill();
+             }
+             ctx.font = "20px IBM Plex Sans";
+             ctx.globalAlpha = 1.0
+             // ctx.fillStyle = "#206311"
+             ctx.fillText(cls['label'], objectXMin, objectYMin)
+             // resolve()
+           }
+      },
+    submitInference(image, canvas_url, width=null, height=null) {
+      console.log(`width ${width} height ${height}`)
+      // post to powerai when user clicks "upload"
+      console.log("this.$refs.timelineChart")
+      console.log(this.$refs.timelineChart)
+      let model = this.$data.selectedModel
+      console.log(`image type ${typeof image}`)
+      console.log(`submitting inference to model ${model['name']}`)
+        var headers = {
+          "X-Proxy-URL": this.$data.mviUrl  //this.$data.url
+        }
+
+        var blobAppended = true
+        var formData = new FormData()
+        formData.append('blob', image, 'image.png')
+        if (blobAppended) {
+          var options = {
+            method: "POST",
+            body: formData,
+            headers: headers
+          }
+          if (this.$data.edge) {
+            console.log("posting to edge endpoint")
+            var url = `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/proxypost/inference`
+          } else {
+            console.log("posting to MVI endpoint")
+            var url = `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/proxypost` + "/api/dlapis/" + model['_id']
+          }
+          console.log(`url ${url}`)
+          var beforeFetch = performance.now();
+
+          fetch(url, options).then((res) => {
+            console.log("inference uploaded")
+            console.log(`took ${(performance.now() - beforeFetch)/1000} seconds to receive inference raw result`)
+            // TODO, show a "loading" gif until inference is fully uploaded?
+
+            var beforeClear = performance.now();
+            var goodCanvas = this.$refs.canvas_good
+            var goodCtx = goodCanvas.getContext("2d")
+            goodCtx.clearRect(0,0, goodCanvas.width, goodCanvas.height)
+
+            var badCanvas = this.$refs.canvas_bad
+            var badCtx = badCanvas.getContext("2d")
+            badCtx.clearRect(0,0, badCanvas.width, badCanvas.height)
+
+            goodCtx.beginPath()
+            badCtx.beginPath()
+
+            console.log(`took ${(performance.now() - beforeClear)/1000} seconds to clear canvas`)
+            res.json().then((result) => {
+              console.log(`took ${(performance.now() - beforeFetch)/1000} seconds to parse inference result json`)
+              // cases
+              // append image inference (object or classification)
+              // handle array of images (classification)
+              // upload video, no need to append inference results
+              if (Object.keys(result).includes('classified')) {
+                // process single image
+                this.$data.inferenceDetails[result.imageMd5] = {}
+                console.log('imageUrl')
+                console.log(result['imageUrl'])
+                if (Object.keys(result).includes("imageUrl")) {
+                  var endpoint = '/uploads' + result.imageUrl.split('/uploads')[1]
+                  var filename = endpoint.split('/').slice(-1)[0]
+                } else {
+                  var endpoint = null
+                  var filename = null
+                }
+
+                /*
+                // clear canvas_draw box?
+                var canvas = this.$refs.canvas_draw
+                var ctx = canvas.getContext("2d")
+                if (Array.isArray(result.classified) && (result.classified.length < 1) ) {
+                  console.log("skipping inference, no results detected")
+                  console.log("clearing boxes")
+                  ctx.clearRect(0,0,canvas.width, canvas.height)
+                  return
+                }
+                */
+                if (this.$data.selectedModel.usage == 'cod') { // TODO, see if there are other object detection models
+                  // object detection
+                  var analysis_type = 'object_detection'
+                } else {
+                  // classification
+                  var analysis_type = 'classification'
+                  // get labels
+                  var labels = Array.from(new Set(Object.keys(result.classified).map((c) => c)))
+                  labels.map((l) => {
+                    var r = Object.keys(result.classified).filter(c => c.label == l)
+                    var count = r.length //Array.from((new Set(r))).length
+                    console.log("count for " + l)
+                    this.$data.inferenceDetails[result.imageMd5][l] = {"count": count, "score": result.classified[l]}
+                    // this.$data.inferenceDetails[result.imageMd5]['score'] = result.classified[l]
+                  })
+
+                  // get heatmap
+                  if (Object.keys(result).includes('heatmap')) {
+                    var heatmap = result['heatmap']
+                  } else {
+                    var heatmap = ""
+                  }
+                }
+
+                // TODO, curretly have to store this locally since pictures are not returned with other inferences. Should investigate where these images/metadata are stored, and possibly cache results
+
+
+                // if (analysis_type == 'classification') {
+                // result.classified.filter( inf => inf.name == '_negative_' )
+                // }
+
+                // skip if "_negative_" class, seems to be built in MVI
+                if (JSON.stringify(result['classified']).includes('_negative_')) {
+                  return
+                }
+
+                var d = new Date()
+                var date = d.toJSON()
+
+                if (endpoint) {
+                  var image_url = this.$data.mviUrl + endpoint
+                  console.log("image_url")
+                  console.log(image_url)
+                } else {
+                  // in case of edge, not recommended...TODO, need to stash thumbnails somewhere
+                  var image_url = canvas_url
+                }
+
+                var inference = {
+                  _id: result.imageMd5,
+                  analysis_type: analysis_type, //"image",
+                  canvas_url: image_url, //canvas_url,
+                  created_date: date,
+                  timestamp: d,
+                  thumbnail_path: '/uploads' + endpoint,
+                  status: result['result'],
+                  filename: "capture_" + (new Date().toJSON()), //filename,
+                  model_id: result['webAPIId'],
+                  heatmap: heatmap,
+                  percent_complete: 100,
+                  classified: result['classified'],
+                  url: this.$data.url,
+                  width: width,
+                  height: height
+                }
+                var recBoundingBoxes = this.$data.recBoundingBoxes
+                // /*
+                // detect if object in ROI
+                let minX = Math.min(this.$data.recEnd['x'], this.$data.recStart['x'])
+                let maxX = Math.max(this.$data.recEnd['x'], this.$data.recStart['x'])
+                let minY = Math.min(this.$data.recEnd['y'], this.$data.recStart['y'])
+                let maxY = Math.max(this.$data.recEnd['y'], this.$data.recStart['y'])
+                let recWidth = maxX - minX
+                let recHeight = maxY - minY
+
+                // ctx.clearRect(0,0,canvas.offsetWidth, canvas.offsetHeight)
+                // ctx.strokeStyle = "green";
+                // ctx.beginPath();
+                // ctx.rect(minX, minY, recWidth, recHeight)
+                // ctx.stroke();
+
+                var classesInRoi = []
+                // process recognized classes
+
+                // var insideROI = false
+
+                // if objects have been detected
+                if ( (inference["classified"].length > 0) && this.$data.recBoundingBoxes)  {
+                  var wRatio = canvas.offsetWidth / width
+                  var vRatio = canvas.offsetHeight / height
+                  // draw ROI
+                  // lets gen a ratio based on the real width/height (offset)
+                  var results = []
+
+                  var before = performance.now();
+
+                  inference["classified"].map( (cls, idx) => {
+                    // get corrected coords for object
+                    var objectYMax = cls['ymax'] * vRatio
+                    var objectYMin = cls['ymin'] * vRatio
+                    var objectXMax = cls['xmax'] * wRatio
+                    var objectXMin = cls['xmin'] * wRatio
+                    var recBoxYMin = this.$data.recBoundingBoxes['ymin'] //* vRatio
+                    var recBoxYMax = this.$data.recBoundingBoxes['ymax'] //* vRatio
+                    var recBoxXMin = this.$data.recBoundingBoxes['xmin'] //* wRatio
+                    var recBoxXMax = this.$data.recBoundingBoxes['xmax'] //* wRatio
+                    var labelInRoi = (( recBoxYMin <= objectYMax && objectYMax <= recBoxYMax ) ||
+                                     ( recBoxYMin <= objectYMin && objectYMin <= recBoxYMax )) &&
+                                     (( recBoxXMin <= objectXMax && objectXMax <= recBoxXMax ) ||
+                                     ( recBoxXMin <= objectXMin && objectXMin <= recBoxXMax ))
+
+                    // if roi and label in roi, draw box
+                    if (labelInRoi || ( Object.keys(this.$data.recBoundingBoxes).length < 1  )) {
+                      let recWidth = Math.abs(objectXMin - objectXMax)
+                      let recHeight = Math.abs(objectYMin - objectYMax)
+                      classesInRoi.push(cls['label'])
+                      this.drawRectStream(labelInRoi, width, cls, recWidth, recHeight, objectXMin, objectYMin, goodCtx, badCtx)
+                    } else if ( (! labelInRoi) && (Object.keys(this.$data.recBoundingBoxes).length == 0)) {
+                      let recWidth = Math.abs(objectXMin - objectXMax)
+                      let recHeight = Math.abs(objectYMin - objectYMax)
+                      this.drawRectStream(labelInRoi, width, cls, recWidth, recHeight, objectXMin, objectYMin, goodCtx, badCtx)
+                    }
+
+                    if (inference["classified"].length == (idx+1)) {
+                      console.log("processed all objects in this inference, checking for alert")
+                      // this.$data.alertConfigs.map()
+                      this.checkAlert(classesInRoi, date, this.$data.inferences.length)
+                      var after = performance.now();
+                      console.log(`processing inference took ${(after-before)/1000} seconds`)
+                      // only append inference if we have matching classes in ROI, or no ROI defined
+                      if ( (classesInRoi.length > 0) || ( Object.keys(this.$data.recBoundingBoxes).length == 0 )) {
+                        console.log("done, appending inference")
+                        // this.$data.allInferences.push(inference)
+                        this.$data.inferences.push(inference)
+                        console.log(inference)
+                      }
+                    }
+
+                    // default classes, should be adjusted
+                    if (this.$data.selected_bad_labels.includes( cls['label']) && labelInRoi ) {
+                       var alert = {
+                         "type": "Bad Label in ROI",
+                         "classes": cls['label'],
+                         "priority": "High",
+                         "date": date
+                       }
+                       // console.log(`adding alert ${alert['type']}`)
+                       // this.$data.alerts.push(alert)
+                     } /*else if (this.$data.selected_bad_labels.includes( cls['label']) && (!labelInRoi)) {
+                       var alert = {
+                         "type": "Bad Label outside of ROI",
+                         "classes": cls['label'],
+                         "priority": "High",
+                         "date": date
+                       }
+                       console.log(`adding alert ${alert['type']}`)
+                       this.$data.alerts.push(alert)
+                     } else if (this.$data.selected_good_labels.includes( cls['label']) && (labelInRoi)) {
+                       var alert = {
+                         "type": "Good Label in ROI",
+                         "classes": cls['label'],
+                         "priority": "Low",
+                         "date": date
+                       }
+                       console.log(`adding alert ${alert['type']}`)
+                       this.$data.alerts.push(alert)
+                     } else {
+                       console.log("no alerts")
+                     }*/
+                          // debugging
+                          // ctx.fillText(`objectXMin ${objectXMin.toFixed(2)} objectYMin ${objectYMin.toFixed(2)}`, objectXMin, objectYMin)
+                          // ctx.fillText(`objectXMin ${objectXMin.toFixed(2)} objectYMax ${objectYMax.toFixed(2)}`, objectXMin, objectYMax)
+                          // ctx.fillText(`objectXMax ${objectXMax.toFixed(2)} objectYMin ${objectYMin.toFixed(2)}`, objectXMax, objectYMin)
+                          // ctx.fillText(`objectXMax ${objectXMax.toFixed(2)} objectYMax ${objectYMax.toFixed(2)}`, objectXMax, objectYMax)
+                       // }
+                       /*
+                       else if (this.$data.selected_good_labels.includes( cls['label'])) {
+                         console.log("good object found in ROI, drawing")
+                         // let minX = Math.min(this.$data.recEnd['x'], this.$data.recStart['x'])
+                         // let minY = Math.min(this.$data.recEnd['y'], this.$data.recStart['y'])
+                         let recWidth = Math.abs(objectXMin - objectXMax)
+                         let recHeight = Math.abs(objectYMin - objectYMax)
+                         console.log("recWidth recHeight")
+                         console.log(`${recWidth}, ${recHeight}`)
+                         console.log("objectXMin objectYMin")
+                         console.log(`${objectXMin} ${objectYMin}`)
+                         ctx.strokeStyle = "green";
+                         ctx.beginPath();
+                         ctx.rect(objectXMin, objectYMin, recWidth, recHeight)
+                         ctx.stroke();
+                         ctx.font = "16px Arial";
+                         ctx.fillStyle = "#DC4929";
+                         ctx.fillText(cls['label'], objectXMin, objectYMin)
+                         // draw location
+                         // ctx.fillText(`objectXMin ${objectXMin.toFixed(2)} objectYMin ${objectYMin.toFixed(2)}`, objectXMin, objectYMin)
+                         // ctx.fillText(`objectXMin ${objectXMin.toFixed(2)} objectYMax ${objectYMax.toFixed(2)}`, objectXMin, objectYMax)
+                         // ctx.fillText(`objectXMax ${objectXMax.toFixed(2)} objectYMin ${objectYMin.toFixed(2)}`, objectXMax, objectYMin)
+                         // ctx.fillText(`objectXMin ${objectXMin.toFixed(2)} objectYMax ${objectYMax.toFixed(2)}`, objectXMin, objectYMax)
+                         console.log("done drawing")
+                       }
+                       else {
+                        console.log("object NOT found in ROI, drawing")
+                        // let minX = Math.min(this.$data.recEnd['x'], this.$data.recStart['x'])
+                        // let minY = Math.min(this.$data.recEnd['y'], this.$data.recStart['y'])
+                        let recWidth = Math.abs(objectXMin - objectXMax)
+                        let recHeight = Math.abs(objectYMin - objectYMax)
+                        console.log("recWidth recHeight")
+                        console.log(`${recWidth}, ${recHeight}`)
+                        console.log("objectXMin objectYMin")
+                        console.log(`${objectXMin} ${objectYMin}`)
+                        ctx.strokeStyle = "yellow";
+                        ctx.beginPath();
+                        ctx.rect(objectXMin, objectYMin, recWidth, recHeight)
+                        ctx.stroke();
+                        ctx.font = "16px Arial";
+                        ctx.fillStyle = "#DC4929";
+                        ctx.fillText(cls['label'], objectXMin, objectYMin)
+                        // draw location
+                        // ctx.fillText(`objectXMin ${objectXMin.toFixed(2)} objectYMin ${objectYMin.toFixed(2)}`, objectXMin, objectYMin)
+                        // ctx.fillText(`objectXMin ${objectXMin.toFixed(2)} objectYMax ${objectYMax.toFixed(2)}`, objectXMin, objectYMax)
+                        // ctx.fillText(`objectXMax ${objectXMax.toFixed(2)} objectYMin ${objectYMin.toFixed(2)}`, objectXMax, objectYMin)
+                        // ctx.fillText(`objectXMin ${objectXMin.toFixed(2)} objectYMax ${objectYMax.toFixed(2)}`, objectXMin, objectYMax)
+                        console.log("done drawing")
+                      }
+                        */
+                    })
+                }
+                // */
+
+                // object detection
+                // {"webAPIId":"61539587-2c52-47d6-bfb7-a60d6d49bace","imageUrl":"http://vision-v120-prod-service:9080/vision-v120-prod-api/uploads/temp/61539587-2c52-47d6-bfb7-a60d6d49bace/ebd425bc-c675-4161-95e1-ca81bf685957.png","imageMd5":"8cb49157f32d2790dfc46b96abadbce7","classified":[{"confidence":0.9998242259025574,"ymax":153,"label":"helmet","xmax":236,"xmin":136,"ymin":8},{"confidence":0.7896438241004944,"ymax":492,"label":"safety_vest","xmax":314,"xmin":114,"ymin":143}],"result":"success"}
+                // "classified":[{"confidence":0.9998242259025574,"ymax":153,"label":"helmet","xmax":236,"xmin":136,"ymin":8},{"confidence":0.7896438241004944,"ymax":492,"label":"safety_vest","xmax":314,"xmin":114,"ymin":143}]
+
+                // classifier
+                // {"webAPIId":"f1bdbfb5-7a55-402d-9cd4-3d7c16d1d8d4","imageUrl":"http://vision-v120-prod-service:9080/vision-v120-prod-api/uploads/temp/f1bdbfb5-7a55-402d-9cd4-3d7c16d1d8d4/d90d3ed3-8076-4cca-b2b9-b10ba331e9f3.png","imageMd5":"f9c7439db22cf5cea47d24453876cd14","classified":{"Pneumonia-Virus":"79.53754425048828"},"result":"success"}
+                // "classified":{"Pneumonia-Virus":"79.53754425048828"}
+              }
+            this.getCount()
+            }).catch((err) => {
+              console.log("error parsing json")
+              console.log(err)
+            })
+          }).catch((err) => {
+            console.log(err)
+          })
+        }
+          // if (f_idx == (this.$data.files.length - 1)) {
+          //   this.$data.files = []
+          //   this.$data.filenames = []
+          // }
+        // })
+      },
+
+      login() {
+        localStorage.setItem('mviUrl', this.$data.mviUrl)
+        if (this.$data.edge) {
+          this.$data.token = null
+          this.hideModal({'name': 'login-modal'})
+          this.getModels()
+          return
+        } else if (this.$data.apiToken) {
+          console.log(`setting provided API token`)
+          this.$data.token = this.$data.apiToken
+          this.hideModal({'name': 'login-modal'})
+          localStorage.setItem('token', this.$data.apiToken)
+          this.getModels()
+          return
+        } else {
+          console.log(`requesting token from ${this.$data.mviUrl}/api/tokens`)
+          var options = {
+            method: "POST",
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            insecure: true,
+            body: JSON.stringify({
+              "username": this.$data.username,
+              "password": this.$data.password,
+              "grant_type": "password"
+            })
+          }
+          console.log(`login options ${JSON.stringify(options)}`)
+          fetch(this.$data.mviUrl + "/api/tokens", options).then((res) => {
+            console.log("token api request made")
+            this.$modal.hide("login-modal")
+            res.json().then((token) => {
+              console.log(token)
+              console.log(`received new token ${JSON.stringify(token['token'])}`)
+              this.$data.token = token['token']
+              localStorage.setItem('token', token['token'])
+              this.getModels()
+              // pull data
+            }).catch((err) => {
+              console.log("err in token api promise")
+              console.log(err)
+            })
+          })
+        }
+      },
+      inputFile: function(newFile, oldFile) {
+        if (newFile && oldFile && !newFile.active && oldFile.active) {
+          // Get response data
+          console.log('response', newFile.response)
+          if (newFile.xhr) {
+            //  Get the response status code
+            console.log('status', newFile.xhr.status)
+          }
+        }
+      },
+      inputFilter: function(newFile, oldFile, prevent) {
+        if (newFile && !oldFile) {
+          // Filter non-image file
+          if (!/\.(jpeg|jpe|jpg|gif|png|webp)$/i.test(newFile.name)) {
+            return prevent()
+          }
+        }
+
+        // Create a blob field
+        newFile.blob = ''
+        let URL = window.URL || window.webkitURL
+        if (URL && URL.createObjectURL) {
+          newFile.blob = URL.createObjectURL(newFile.file)
+        }
+      },
+      formatLine(inferenceId) {
+        if (this.$data.inferenceDetails) {
+        console.log("generating line graph for " + inferenceId)
+        console.log(this.$data.inferenceDetails[inferenceId])
+        var detections = this.$data.inferenceDetails[inferenceId]
+        var objects = Object.keys(detections)
+        var d = []
+        objects.map((o) => {
+          var x = Array.from(Array(detections[o].length + 1).keys())
+          // d['data'].push({
+          d.push({
+            x: [0].concat(x),
+            y: [0].concat(detections[o]),
+            mode: 'lines',
+            type: 'scatter',
+            name: o
+            // mode:"lines+markers"
+          })
+          console.log(d)
+        })
+
+        this.$data.lineGraphData = d
+        console.log("this.$data.lineGraphData")
+        console.log(this.$data.lineGraphData)
+        // detections.map( (detection) )
+        }
+        // this.$data.lineGraph =
+        // this.$data.circleGraph =
+      },
+      formatCircle() {
+        // console.log(this.$data.inferenceDetails)
+        if (this.$data.inference_rows_filtered.length > 0) {
+          var rows = this.$data.inference_rows_filtered
+        } else {
+          var rows = this.$data.inference_rows
+        }
+
+        console.log("generating line graph")
+        // var detections = this.$data.inferenceDetails[inferenceId]
+        // var objects = Object.keys(detections)
+        var d = {
+          values: [],
+          labels: [],
+          type: "pie",
+          textinfo: "label+value",
+          textposition: "outside",
+          // automargin: true,
+          showlegend: true
+        }
+
+        var count = {}
+        rows.map( (r, idx) => {
+
+          if (Object.keys(count).includes(r['Class'])) {
+            count[r['Class']] += 1
+          } else {
+            count[r['Class']] = 1
+          }
+
+          if (idx == (rows.length - 1) ) {
+            console.log("finished looping rows, format pie data")
+            d['labels'] = Object.keys(count)
+            Object.keys(count).map((l, l_idx) => {
+              d['values'].push( count[l] )
+              console.log("d")
+              console.log(d)
+              if (l_idx  == (Object.keys(count).length - 1 ) ) {
+                this.$data.circleGraphData = [d]
+                console.log("this.$data.circleGraphData")
+                console.log(this.$data.circleGraphData)
+              }
+            })
+            // d['values'] =
+            // d['values']
+            // d['labels'].push(r['Class'])
+
+          }
+        })
+
+        // objects.map((o) => {
+        //   d['values'].push(detections[o].reduce((a, b) => a + b, 0))
+        //   d['labels'].push(o)
+        //   console.log(d)
+        // })
+
+      },
+      getModels() {
+        if (this.$data.edge) {
+          var proxyUrl = `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/proxyget` + "/model-info"
+        } else {
+          var proxyUrl = `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/proxyget` + "/api/trained-models"
+        }
+        var mviUrl = this.$data.mviUrl
+        var options = {
+          method: "GET",
+          headers: {
+            "X-Auth-Token": this.$data.token || "",
+            "X-Proxy-URL": mviUrl //url //this.$data.url
+          }
+        }
+        console.log(`getting models from ${mviUrl}`)
+        console.log(`options ${JSON.stringify(options)}`)
+        var that = this
+        // proxy needed for cors
+        fetch(proxyUrl, options).then((res) => {
+          res.json().then((models) => {
+            console.log(`models received`)
+            if (this.$data.edge) {
+              this.$data.models = [models]
+              this.$data.allmodels = [models]
+              that.refreshLabels()
+            } else {
+              this.$data.models = models.filter( (m) => m.deployed == '1'  )
+              this.$data.allmodels = models
+              that.refreshLabels()
+            }
+          })
+        })
+      },
+      refreshLabels() {
+        console.log("refreshing models for")
+        console.log(this.$data.selectedModelName)
+        if (this.$data.selectedModelName) {
+          this.setModel(this.$data.selectedModelName)
+        }
+      },
+
+      showInvokeModal(config) {
+        console.log("opening modal")
+        // console.log(fields)
+        this.$data.input = []
+        console.log(config.function)
+        console.log(config.fields)
+        this.$data.func = config.function
+        this.$data.fields = config.fields
+        this.$data.title = config.title
+        this.$data.user_fields = []
+        this.$data.user_type = ''
+        this.$modal.show('invoke-modal', {
+          "fields": config.fields
+        });
+      },
+      showModal(config) {
+        console.log("opening modal")
+        console.log("config")
+        console.log(Object.keys(config))
+        this.$data.fields = config.fields
+        this.$data.title = config.title
+        if (Object.keys(config).includes('src')) {
+          this.$data.src = config.src
+          console.log("drawing image")
+          this.$modal.show(config.name, {
+            "fields": config.fields
+          });
+          return
+        }
+        else if (Object.keys(config).includes('inference')) {
+          console.log("inference objdetected, drawing")
+          this.$data.inference = config.inference
+          this.$modal.show(config.name, {
+            "fields": config.fields
+          });
+          return
+        } else {
+          this.$modal.show(config.name, {
+            "fields": config.fields
+          });
+        }
+      },
+      hideModal(config) {
+        this.$modal.hide(config.name);
+        console.log("hiding modal: " + config.name)
+        // this.$data.user_fields = []
+        // this.$data.user_type = ''
+      },
+      getFormValues() {
+        console.log("getting form vals")
+        console.log(this.$data.input)
+        // this.output = this.$refs.my_input.value
+        // console.log(this.$refs.my_input.value)
+      },
+      goHome() {
+        this.$data.selectedInference = null
+        this.$data.renderInferences = this.$data.inferences
+      },
+    },
+    filters: {
+      pretty: function(value) {
+        return JSON.stringify(value, null, 2);
+      }
+    }
+
+
+  }
+</script>
+
+<!-- TODO, finish modal -->
+<!-- <script type="text/x-template" id="modal-template">
+  <transition name="modal">
+    <div class="modal-mask">
+      <div class="modal-wrapper">
+        <div class="modal-container">
+
+          <div class="modal-header">
+            <slot name="header">
+              default header
+            </slot>
+          </div>
+
+          <div class="modal-body">
+            <slot name="body">
+              default body
+            </slot>
+          </div>
+
+          <div class="modal-footer">
+            <slot name="footer">
+              default footer
+              <button class="modal-default-button" @click="$emit('close')">
+                OK
+              </button>
+            </slot>
+          </div>
+        </div>
+      </div>
+    </div>
+  </transition>
+</script> -->
+
+
+<style>
+  #app {
+    font-family: 'Avenir', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
+    color: #2c3e50;
+    margin-top: 60px;
+    background-color: rgb(240,240,240);
+  }
+
+
+  #drop_zone {
+    /* border: 2px dashed #eaecee; */
+    /* width: 400px; */
+    /* height: 300px; */
+    margin: auto;
+  }
+
+  li {
+    /* background: #cce5ff; */
+    /* margin: 5px; */
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+  }
+
+  select {
+    margin: 50px;
+    padding: 5px 35px 5px 5px;
+    font-size: 16px;
+    border: 1px solid #666666;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  svg.notification {
+    fill: blue;
+  }
+
+</style>
+
+<!-- <style lang="scss">
+@import "./styles/carbon";
+</style> -->
+
+<!-- <style lang="scss" scoped>
+  .md-card {
+    width: 320px;
+    margin: 40px;
+    display: inline-block;
+    vertical-align: top;
+  }
+</style> -->
