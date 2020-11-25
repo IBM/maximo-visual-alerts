@@ -160,6 +160,11 @@ Furthermore, we also have "actions". These are used to make a custom API request
 
 <img src="https://i.imgur.com/I45853P.png" />
 
+We have also added a method to draw a "Region of Interest"...this is useful for workplaces that have specific areas that require equipment (i.e "Hard Hat Zone"). To do so, simply hover your cursor over the video, click once to begin drawing the bounding box, and then click again to close the bounding box. As a user draws a region of interest, alerts and objects will only be observed within that region, all others will be ignored. A region of interest can be adjusted. In the animation below, we can see how results are being rendered in the full image. But after drawing the region of interest, the rendered objects are limited to that region.
+
+<img src="https://i.imgur.com/Hmplum3.gifv" />
+
+
 After selecting the relevant model categories, we can then begin streaming a video to the application for analysis. Currently, this app supports the following video sources.
 
 1. Webcam - This is the default method, and requires no configuration
