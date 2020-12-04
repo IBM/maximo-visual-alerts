@@ -247,7 +247,7 @@
                 <template v-if="use_content" slot="content">
                   <ul>
                     <li>
-                      <cv-button id="configure_interval" v-on:click="showModal({'name': 'configure-interval-modal'})">Set Interval Of Feed</cv-button>
+                      <cv-button id="configure_interval" style="margin-bottom:10px" v-on:click="showModal({'name': 'configure-interval-modal'})">Set Interval Of Feed</cv-button>
                     </li>
                     <li>
                       <cv-button type="default" v-on:click="drawROI()">Draw ROI</cv-button>
@@ -626,7 +626,7 @@
               v-model="mviUrl">
             </cv-text-input>
             <cv-text-input
-              label="Username"
+              label="Username (v1.3.0 and lower)"
               v-model="username"
               placeholder="Username">
             </cv-text-input>
@@ -637,7 +637,7 @@
               placeholder="Password">
             </cv-text-input>
             <cv-text-input
-              label="API Token"
+              label="API Token (v8.0.0+)"
               v-model="apiToken"
               type="password"
               placeholder="API Token">
@@ -974,7 +974,7 @@
         },
         stacked:false,
         loggedIn: false,
-        markType: "rect",
+        markType: "dot",
         timelineData: [
         {"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":7,"date":"10/5/2020 1:10:30 PM","group":"beltloader_empty"},{"value":1,"date":"10/5/2020 1:10:30 PM","group":"jetbridge_disconnected"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"jetbridge_connected"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"cargo_open"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"aircraft"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"wheel_chocked"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"beltloader_inuse"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"beltloader_baggage"}],
         timelineData: [],
