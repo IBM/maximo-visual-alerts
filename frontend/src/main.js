@@ -67,6 +67,8 @@ import Filter16 from '@carbon/icons-vue/es/filter/16';
 
 import WarningFilled32 from '@carbon/icons-vue/es/warning--filled/32';
 
+import Restart32 from '@carbon/icons-vue/es/restart/32';
+
 Vue.use(CarbonIconsVue, {
     components: {
       CalendarSettings32,
@@ -78,7 +80,8 @@ Vue.use(CarbonIconsVue, {
       Notification20,
       Filter16,
       WarningFilled32,
-      NotificationNew20
+      NotificationNew20,
+      Restart32
     }
 })
 

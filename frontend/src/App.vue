@@ -184,14 +184,23 @@
             3. Webcam streams to canvas
             -->
 
+            <template v-if="showRestart">
+              <div id="restartView" @click="restartStream()" style="width: 100%;height:80%;position:absolute;right: 0; top: 0; left: 0;margin: auto;background-color:rgb(217,217,217);z-index:200">
+                <div style="margin-top:140px;bottom:50%">
+                  <Restart32 style="width: 25%;height:25%;top:50%;bottom:50%"/>
+                  <p>Restart Video</p>
+                </div>
+              </div>
+            </template>
+
             <!-- Uploaded video -->
             <div style="width: 100%;height:100%;position:absolute;top: 10px; right: 0; bottom: 0; left: 0;margin: auto;">
-              <video muted loop @ended="restartStream()" style="z-index: 10;width: 100%;height:480px;" crossorigin="anonymous" ref="video" id="video" width="640" height="480" autoplay></video>
+              <video muted @ended="askRestartStream()" style="z-index: 10;width: 100%;height:480px;" crossorigin="anonymous" ref="video" id="video" width="640" height="480" autoplay></video>
             </div>
 
             <!-- Remote video -->
             <div ref="remote_video_div" id="remote_video_div" style="visibility: hidden;width: 100%;height:100%;position:absolute;top: 30%; right: 0; bottom: 0; left: 0;margin: auto;">
-              <video muted loop @ended="restartStream()"  style="z-index: 5;width: 100%;" crossorigin="anonymous" ref="remote_video" id="remote_video"  autoplay></video>
+              <video muted @ended="askRestartStream()"  style="z-index: 5;width: 100%;" crossorigin="anonymous" ref="remote_video" id="remote_video"  autoplay></video>
             </div>
 
             <!-- RTSP -->
@@ -362,14 +371,33 @@
 
 </div>
     <div>
-      <modal name="upload-modal" height="auto" style="z-index: 3000;">
+      <modal name="upload-modal" ref="upload-modal" height="auto" style="z-index: 3000;">
           <h2 align="center"> Upload File </h2>
-          <div style="margin-left: auto; margin-right: auto;width: 75%; padding: 10px;">
+          <div @drop="checkFileTypes" style="margin-left: auto; margin-right: auto;width: 75%; padding: 10px;">
             <cv-file-uploader
               :accept="['.mp4', '.jpg', '.jpeg', '.png']"
               :multiple=true
               ref="fileUploader">
             </cv-file-uploader>
+            <cv-checkbox
+              label="Repeat Video Playback"
+              @change="adjustVideoRepeat"
+              v-model="staticImageRepeat"
+              :checked="staticImageRepeat"
+              >
+            </cv-checkbox>
+
+            <template v-if="staticImageUpload">
+              <div>
+                <cv-number-input
+                  style="margin-bottom:20px"
+                  label="Seconds between each frame"
+                  v-model="slideshowInterval"
+                  :step="slideshowIntervalStep"
+                  min=1>
+                </cv-number-input>
+              </div>
+            </template>
           </div>
           <div>
             <cv-button @click="uploadFile() ; hideModal({name: 'upload-modal'})">Submit</cv-button>
@@ -959,9 +987,14 @@
     },
     data() {
       return {
+        showRestart: false,
         newNotification: false,
         use_trigger: true,
         use_content: true,
+        slideshowInterval: 1,
+        slideshowIntervalStep: 1,
+        staticImageUpload: false,
+        staticImageRepeat: true,
         iconAlways: {
          "name": "Settings32",
          "functional": true,
@@ -974,7 +1007,7 @@
         },
         stacked:false,
         loggedIn: false,
-        markType: "dot",
+        markType: "rect",
         timelineData: [
         {"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":0,"date":"10/5/2020 1:10:30 PM","group":"employee"},{"value":7,"date":"10/5/2020 1:10:30 PM","group":"beltloader_empty"},{"value":1,"date":"10/5/2020 1:10:30 PM","group":"jetbridge_disconnected"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"jetbridge_connected"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"cargo_open"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"aircraft"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"wheel_chocked"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"beltloader_inuse"},{"value":null,"date":"10/5/2020 1:10:30 PM","group":"beltloader_baggage"}],
         timelineData: [],
@@ -1576,6 +1609,34 @@
       // this.getInferenceDetails();
     },
     methods: {
+        adjustVideoRepeat(ev){
+          console.log("adjusting video repeat")
+          console.log(ev)
+          // this.$refs.video.loop = ev
+          this.$data.staticImageRepeat = ev
+          // if (!ev) {
+          //   console.log("adding function to stop video")
+          //   this.$refs.video.onended = function() {
+          //     console.log("stopping video")
+          //     this.$refs.video.pause()
+          //   }
+          // } else {
+          //   this.$refs.video.onended = null
+          // }
+        },
+        checkFileTypes(){
+          console.log("checking file type")
+          let files = this.$refs.fileUploader.internalFiles
+          console.log(files)
+          const isImage = (file) => ((file.file.type.includes('png')) || (file.file.type.includes('jpg')) || (file.file.type.includes('jpeg')));
+          let staticImages = files.some(isImage)
+          console.log("staticImages")
+          console.log(staticImages)
+          if (staticImages) {
+            this.$data.staticImageUpload = true
+            this.$refs.uploadModal = ""
+          }
+        },
         enableTooltip(){
           console.log("showing tooltip")
           console.log(this.$refs.settingsTooltip)
@@ -1618,79 +1679,6 @@
 
       },
 
-      parseTimeline(){
-        var labelsToIdx = {}
-        // {
-        //     "group": "Dataset 1",
-        //     "date": "2019-01-01T08:00:00.000Z",
-        //     "value": 1,
-        // },
-        var parseDate = this.parseDate
-        var numInferences = this.$data.inferences.length
-        var nodes = []
-        var that = this
-        var labels = this.$data.selected_good_labels
-        // this.$data.timelineOptions.axes.left.domain = labels
-        // create an object with selected labels, key is a label, value is false
-        var observedLabels = Object.fromEntries(labels.map( label => [label, false] ))
-        console.log(`observedLabels`)
-        console.log(observedLabels)
-        let timelineData = this.$data.inferences.map((inference, iIdx) => {
-          var date = inference.created_date
-          console.log(`date ${date}`)
-          var observedLabelsLocal = Object.assign({}, observedLabels)
-          // add object for each label in inference
-          console.log("graphing class indexes")
-          console.log(labels)
-          inference.classified.map( (cls, clsIdx)  => {
-            let idx = labels.findIndex(l => l === cls.label)
-            if (idx < 0 ) {
-              console.log("skipping, class not selected")
-            } else {
-              console.log(`cls.label ${cls.label} idx ${idx}`)
-              observedLabelsLocal[cls.label] = true
-              let line = {
-                value: idx,
-                date: date,
-                timestamp: inference['timestamp'],
-                group: cls.label,
-                imageUrl: inference['canvas_url'],
-                key: cls.label
-              }
-              console.log(line)
-              nodes.push(line)
-            }
-            let processedClassesDone = (clsIdx == (inference.classified.length - 1))
-            if (processedClassesDone) {
-              Object.keys(observedLabelsLocal).map( (label) => {
-                  let found = observedLabelsLocal[label]
-                  if (! found) {
-                    console.log(`selected label ${label} not in inference`)
-                    let line = {
-                      value: null,
-                      date: date,
-                      timestamp: inference['timestamp'],
-                      group: label,
-                      key: label
-                    }
-                    // nodes.push(line)
-                  }
-              } )
-            }
-            if (processedClassesDone && (iIdx == (numInferences - 1))) {
-              console.log("nodes")
-              console.log(nodes)
-              console.log(that.$data.timelineOptions)
-              that.$data.timelineData = nodes
-              // that.$data.timelineData.concat(nodes)
-              // return nodes
-            }
-            // return line
-          })
-          // }
-        })
-        console.log(timelineData)
-      },
       onFilter(val) {
         this.filterValue = val;
       },
@@ -2056,13 +2044,19 @@
       },
       mergeImagesToVideo(stillImages, formData) {
         // this.$data.stillImages
+        let headers = {
+          "x-interval": this.$data.slideshowInterval
+          // "x-repeat": staticImageRepeat
+        }
         let options = {
           method: "POST",
+          headers: headers,
           body: formData
         }
         let url = `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/mergeframes`
         console.log(url)
         fetch(url, options).then( (res) => {
+          this.$data.staticImageUpload = false
           res.blob().then( (vid) => {
              console.log("received merged video")
              let localUrl = URL.createObjectURL(vid)
@@ -2110,14 +2104,13 @@
         // */
       },
       uploadFile() {
+        this.$data.showRestart = false
         this.$data.streamingType = "file"
         this.$data.isStreaming = true
         this.$refs.video.style.visibility = "hidden"
         this.$refs.remote_video.style.visibility = "visible"
         this.$refs.remote_video.style['z-index'] = 2000
         this.$data.videoPlaying = true
-
-
         var formData = new FormData()
 
         var files = this.$refs.fileUploader.internalFiles
@@ -2141,6 +2134,7 @@
               console.log("merging still images")
               // post still images to backend to create video/slideshow
               this.mergeImagesToVideo(stillImages, formData)
+
             }
           } else {
             console.log("video uploaded, playing")
@@ -2188,15 +2182,26 @@
         }
         */
       },
+      askRestartStream() {
+        console.log(this.$data.staticImageRepeat)
+        if (this.$data.staticImageRepeat) {
+          this.restartStream()
+        } else {
+          this.$data.showRestart = true
+        }
+      },
       restartStream() {
-        console.log("end event triggered, restarting stream")
-        console.log("this.$data.videoPlaying")
-        console.log(this.$data.videoPlaying)
-        if ((this.$data.videoPlaying) && (this.$data.streamingType == 'file')) {
+        console.log("restarting stream")
+        this.$data.showRestart = false
+        if ((this.$data.videoPlaying) && (this.$data.streamingType == 'file') ) {
           console.log('restarting stream')
           // this.uploadFile()
-          console.log(this.$refs.fileUploader.internalFiles)
-          this.$refs.remote_video.src = this.$data.localFileSrc
+          // console.log(this.$refs.fileUploader.internalFiles)
+          console.log(this.$data.localFileSrc)
+          this.$refs.remote_video.pause();
+          this.$refs.remote_video.currentTime = 0;
+          this.$refs.remote_video.play();
+          // this.$refs.remote_video.src = this.$data.localFileSrc
         }
         else if ((this.$data.videoPlaying) && (this.$data.streamingType == 'youtube')) {
           this.stream()
@@ -2213,6 +2218,7 @@
         // console.log("Youtube")
         // console.log(Youtube)
         // return
+        this.$data.showRestart = false
         this.hideModal({name: "configure-stream-modal"})
         var url = `${this.$data.proxyServerIp}:${this.$data.proxyServerPort}/stream`
         var payload = {
@@ -2674,31 +2680,13 @@
             // var image = context.drawImage(this.video, 0, 0, width, height);
             var canvas_url = this.canvas.toDataURL("image/png")
           }
-          // console.log(image)
-          this.captures.push(canvas_url);
-          /*
-          var i = new Image();
-          i.onload = function(){
-           console.log("base")
-           console.log( i.width+", "+i.height );
-           console.log( i.naturalWidth+", "+i.naturalHeight );
-          };
-
-          i.src = canvas_url;
-          */
-
-
-          // TODO! Make canvas url match with width and height
-          // console.log(`captured canvas url dims`)
-          // console.log(`width ${width} height ${height}`)
-
-          // console.log(`width ${this.canvas.width} height ${this.canvas.height}`)
-
-          // var draw_canvas = this.$refs.canvas_draw;
-          // console.log(`draw_canvas.width ${draw_canvas.width} draw_canvas.height ${draw_canvas.height}`)
-
-          this.canvas.toBlob(function(blob){ that.submitInference(blob, canvas_url, width, height)}, 'image/png'); // JPEG at 95% quality
-
+          if (canvas_url) {
+            this.captures.push(canvas_url);
+            this.canvas.toBlob(function(blob){ that.submitInference(blob, canvas_url, width, height)}, 'image/png'); // JPEG at 95% quality
+          } else {
+            console.log("no image detected")
+            // TODO, if no image found after x tries, stop analyzing
+          }
           // this.canvas.toBlob(
           //   blob => this.submitInference(blob, canvas_url)
           // )

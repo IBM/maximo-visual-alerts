@@ -164,6 +164,15 @@ app.use('/mergeframes', function(req, res) {
   // var outputOptions =  ['-vcodec libx264 -crf 25  -pix_fmt yuv420p']
   let files = req.files
   console.log(files)
+  var headers = req.headers
+  console.log("headers")
+  console.log(headers)
+  if (Object.keys(headers).includes("x-interval")) {
+    var interval = headers["x-interval"]
+  } else {
+    var interval = "1"
+  }
+  console.log(`interval ${interval}`)
   var filenames = Object.keys(files)
   filenames.map( (name, idx) => {
     let file = files[name]
@@ -171,7 +180,7 @@ app.use('/mergeframes', function(req, res) {
     let path = file.path
     console.log(`handling image at path ${path}`)
     // inputOptions.push('-i', path)
-    fileContents += `file '${path}'\nduration 1\n`
+    fileContents += `file '${path}'\nduration ${interval}\n`
     console.log(`${idx} / ${filenames.length -1}`)
     // cmd.addInput(path) //fs.createReadStream( path ))
     // cmd.addInput('/var/folders/2k/hljc8qsn3fq3j8rkh4g9dy6m0000gn/T/i99pMRRaShDBJBCcHgbOaTjT.png')
