@@ -199,8 +199,8 @@
             </div>
 
             <!-- Remote video -->
-            <div ref="remote_video_div" id="remote_video_div" style="visibility: hidden;width: 100%;height:100%;position:absolute;top: 30%; right: 0; bottom: 0; left: 0;margin: auto;">
-              <video muted @ended="askRestartStream()"  style="z-index: 5;width: 100%;" crossorigin="anonymous" ref="remote_video" id="remote_video"  autoplay></video>
+            <div ref="remote_video_div" id="remote_video_div" style="visibility: hidden;width: 100%;height:100%;position:absolute;right: 0; bottom: 0; left: 0;margin: auto;border:5px solid red">
+              <video muted @ended="askRestartStream()"  style="z-index: 5;height:100%;width:100%;object-fit: fill" crossorigin="anonymous" ref="remote_video" id="remote_video"  autoplay></video>
             </div>
 
             <!-- RTSP -->
@@ -237,33 +237,40 @@
 
         </div>
 
-          <div style="margin-top:30px">
+          <div style="position: absolute;margin-top:30px" class="bx--grid">
+            <div class="bx--row">
 
-              <cv-inline-loading
-                style="width:180px"
-                :state="loadingState"
-                :loading-text="loadingText"
-              </cv-inline-loading>
-
-              <cv-button id="interval" style="width:30%;margin-right: 10px;"  v-on:click="intervalCapture()">Start Analysis Of Feed</cv-button>
-              <cv-button style="width:30%;margin: 0px 10px;background-color:#da1e28" type="default" v-on:click="stopStream">Stop Analysis Of Feed</cv-button>
-            <!-- <cv-icon-button :icon="iconAlways" tip-position="bottom" tip-alignment="center" /> -->
-
-            <div style="float:right">
-              <cv-interactive-tooltip id="settingsTooltip" ref="settingsTooltip" direction="bottom"  >
-                <template v-if="use_trigger" slot="trigger"><Settings32 @mouseover="enableTooltip" style="z-index: 100"  />
-                </template>
-                <template v-if="use_content" slot="content">
-                  <ul>
-                    <li>
-                      <cv-button id="configure_interval" style="margin-bottom:10px" v-on:click="showModal({'name': 'configure-interval-modal'})">Set Interval Of Feed</cv-button>
-                    </li>
-                    <li>
-                      <cv-button type="default" v-on:click="drawROI()">Draw ROI</cv-button>
-                    </li>
-                  </ul>
-                </template>
-              </cv-interactive-tooltip>
+                <div class="bx--col-lg-2" style="border:dotted" >
+                  <cv-inline-loading
+                    style="width:180px"
+                    :state="loadingState"
+                    :loading-text="loadingText"
+                  </cv-inline-loading>
+                </div>
+                <div class="bx--col-lg-4" >
+                  <cv-button id="interval"  v-on:click="intervalCapture()">Start Analysis Of Feed</cv-button>
+                </div>
+                <div class="bx--col-lg-4" >
+                  <cv-button style="10px;background-color:#da1e28" type="default" v-on:click="stopStream">Stop Analysis Of Feed</cv-button>
+                </div>
+                  <!-- <cv-icon-button :icon="iconAlways" tip-position="bottom" tip-alignment="center" /> -->
+                  <!-- <div style="float:right"> -->
+                  <div class="bx--col-lg-2" >
+                    <cv-interactive-tooltip id="settingsTooltip" ref="settingsTooltip" direction="bottom"  >
+                      <template v-if="use_trigger" slot="trigger"><Settings32 @mouseover="enableTooltip" style="z-index: 100"  />
+                      </template>
+                      <template v-if="use_content" slot="content">
+                        <ul>
+                          <li>
+                            <cv-button id="configure_interval" style="margin-bottom:10px" v-on:click="showModal({'name': 'configure-interval-modal'})">Set Interval Of Feed</cv-button>
+                          </li>
+                          <li>
+                            <cv-button type="default" v-on:click="drawROI()">Draw ROI</cv-button>
+                          </li>
+                        </ul>
+                      </template>
+                    </cv-interactive-tooltip>
+                  </div>
             </div>
           </div>
           <!-- <div style="margin-bottom:10px">
@@ -2061,6 +2068,7 @@
              console.log("received merged video")
              let localUrl = URL.createObjectURL(vid)
              this.$refs.remote_video.src = localUrl
+             this.adjustDrawCanvas()
              console.log(localUrl)
           })
         })
@@ -2082,7 +2090,6 @@
 
         this.$refs.canvas.width = vidWidth
         this.$refs.canvas.height = vidHeight
-
         this.$refs.canvas_draw.width = vidWidth
         this.$refs.canvas_draw.height = vidHeight
         this.$refs.canvas_draw_div.style.top = topMargin

@@ -156,7 +156,7 @@ app.use('/mergeframes', function(req, res) {
   var output = fs.createWriteStream(outputFile);
   // var textFile = fs.createWriteStream('./input.txt');
   //var cmd = "ffmpeg -r 1/5 -y -r 1/5 -f concat -safe 0  -i input.txt -c:v libx264 -vf fps=25 -pix_fmt yuv420p out.mp4"
-  var cmd = "ffmpeg -y -f concat -safe 0 -i input.txt -vsync vfr -pix_fmt yuv420p out.mp4"
+  var cmd = "ffmpeg -y -f concat -safe 0 -i input.txt -vsync vfr -pix_fmt yuv420p -vf scale=640:480 out.mp4"
   var fileContents = ""
   // // videoCodec
   // var cmd = ffmpeg()
