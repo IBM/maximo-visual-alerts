@@ -94,12 +94,12 @@ Follow these steps to setup and run this Code Pattern.
 ## 1. Clone repository
 
 ```
-git clone https://github.com/IBM/maximo-streaming-video-analysis
+git clone https://github.com/IBM/maximo-visual-alerts 
 ```
 
 Navigate to the project folder
 ```
-cd maximo-streaming-video-analysis
+cd maximo-visual-alerts 
 ```
 
 ## 2. Start application
@@ -107,7 +107,7 @@ cd maximo-streaming-video-analysis
 **Local Deployment**
 Install frontend dependencies
 ```
-cd maximo-streaming-video-analysis
+cd maximo-visual-alerts 
 cd frontend
 npm install
 ```
@@ -119,7 +119,7 @@ npm run serve
 
 In a separate terminal tab, install backend dependencies
 ```
-cd maximo-streaming-video-analysis
+cd maximo-visual-alerts 
 cd backend
 npm install
 ```
@@ -132,13 +132,13 @@ PORT=3000 npm start
 <!-- **Docker**
 Start Backend
 ```
-docker run -it -p 3000:3000 kkbankol/maximo-live /bin/bash -c "cd /maximo-streaming-video-analysis/backend && PORT=3000 npm start"
+docker run -it -p 3000:3000 kkbankol/maximo-live /bin/bash -c "cd /maximo-visual-alerts /backend && PORT=3000 npm start"
 ```
 
 Start frontend
 ```
 # frontend
-docker run -it -p 8080:8080 kkbankol/maximo-live /bin/bash -c "cd /maximo-streaming-video-analysis/frontend && npm run serve"
+docker run -it -p 8080:8080 kkbankol/maximo-live /bin/bash -c "cd /maximo-visual-alerts /frontend && npm run serve"
 ``` -->
 
 ## 3. Configure web application
